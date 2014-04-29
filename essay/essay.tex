@@ -1,0 +1,109 @@
+\documentclass[norsk]{ifimaster}
+\usepackage[utf8]{inputenc}
+\usepackage{babel,textcomp,csquotes,ifimasterforside,varioref,graphicx}
+\usepackage[T1]{fontenc}
+\usepackage[hyphens]{url} % deler lange url-er
+
+% biblatex-pakka med opsjoner
+\usepackage[backend=biber,%
+%style=numeric,%
+backref,%
+sortcites,%
+defernumbers=true,%
+style=authoryear,%
+%style=alphabetic%
+%sorting=none,% eller nty, nyt o.a
+%date=long,% eller short, terse, comp, iso8601
+]{biblatex}
+
+% må opplyse om bib-filen
+% ved flere bib-filer gjentas kommandoen
+\addbibresource{litteraturliste.bib}
+
+% denne kommandoen er for reftex som ikke forstår BibLaTeX
+%\bibliography{litteraturliste}%
+
+% noen mulige lokale biblatex tilpasninger
+\DefineBibliographyStrings{norsk}{%
+   urlseen={Sett: },
+   bibliography = {Bibliografi},
+   references = {Referanser},
+   editor = {redaktør},
+   translator={oversetter},
+   %page={side},
+   %pages={sidene},
+   and={og},
+}
+
+\DeclareFieldFormat{url}{\url{#1}} % fjerner hardkodet "URL: " foran url
+
+\DeclareUrlCommand\url{\def\UrlLeft{\newline}\def\UrlRight{\newline}%
+\urlstyle{sf}} % setter inn passende linjeskift
+
+% biblatex anbefaler at hyperref blir lastet inn etter biblatex
+\usepackage{hyperref}
+
+\title{Design mønstre:}
+\subtitle{ Klassisk mot prototypisk programdesign av en nettassistent  }
+\subsubtitle{---om ``design patterns'' og implementasjon i javascript}
+% Sett inn ditt eget navn her:
+\author{Johannes Akse}
+
+\begin{document}
+\maketitle{}
+
+\tableofcontents
+\nocite{*}
+\section{Introduksjon}
+\subsection{Bakgrunn}
+Dette essayet skal handle om ``design patterns'' og hvordan disse kan implementeres i javascript. 
+\paragraf
+
+
+
+\section{Avgrensning og problemstilling}
+\section{Disposisjon}
+
+
+
+
+
+\section{Metode (deltakerene)}
+
+
+
+\section{Diskusjon (Konflikten tilspisses)}
+
+
+
+\section{Avsluting}
+
+ 
+
+
+
+
+
+\section{User interface management systems}
+
+A user interface management system (UIMS) is a software 
+component that is separate from the application program 
+that performs the underlaying task **Olsen, 1992**.
+
+\newpage
+% overskriften på referanselista (dokumentklassen article)
+\renewcommand{\refname}{Litteraturliste}
+
+% redefiner \bibname ved bruk av dokumentklassen book
+
+% Litteraturlista inn i innholdsfortegnelsen
+\addcontentsline{toc}{section}{\refname}
+
+\printbibheading
+\printbibliography[type=book, title={Bøker}]
+\printbibliography[type=article, title={Artikler}]
+\printbibliography[type=manual, title={Manualer}]
+\printbibliography[nottype=book, nottype=article,%
+nottype=manual, title={Øvrige dokumenter}]
+
+\end{document}
