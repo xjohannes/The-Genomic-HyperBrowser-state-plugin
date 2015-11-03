@@ -15,6 +15,7 @@ logs
 build/*
 
 # Dependency directory
+node_modules/*
 
 #latex Compiled
 *.aux
