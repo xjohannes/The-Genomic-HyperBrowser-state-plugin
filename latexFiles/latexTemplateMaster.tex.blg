@@ -1,0 +1,5 @@
+[0] Config.pm:324> INFO - This is Biber 2.1
+[1] Config.pm:327> INFO - Logfile is 'latexTemplateMaster.tex.blg'
+[77] biber-darwin:276> INFO - === Mon Sep  7, 2015, 10:37:45
+[95] Utils.pm:162> ERROR - Cannot find control file 'latexTemplateMaster.tex.bcf'! - did you pass the "backend=biber" option to BibLaTeX?
+[96] Biber.pm:110> INFO - ERRORS: 1
