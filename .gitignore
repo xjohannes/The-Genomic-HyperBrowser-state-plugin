@@ -16,3 +16,18 @@ build/*
 
 # Dependency directory
 
+#latex Compiled
+.aux
+.bbl
+.bcf
+.blg
+.dvi
+.fdb_latexmk
+.fls
+.log.out
+.run.xml
+.synctex.gz
+.tex.blg
+.toc
+
+
