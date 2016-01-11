@@ -15,6 +15,8 @@ describe("A View PROTOTYPE", function() {
         modeView.init({model:modeModel, dispatcher: dispatcher});
     });
     afterEach(function() {
+        
+        
         modeView      = null;
         modeModel     = null;
     });

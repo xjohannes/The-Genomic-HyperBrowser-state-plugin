@@ -1,6 +1,17 @@
 (function() {
 'use strict';
-	var //testingJQuery = require('./stateApp/js/testingJQuery.js'),
-			stateApp  = require('./stateApp/js/state.js'),
-			polyfills = require('./stateApp/js/polyfills/mdnPolyfill');
+	var modeApp   = require('./stateApp/js/modeApp.js'),
+			toolApp   = require('./stateApp/js/toolsApp.js'),
+			polyfills = require('./stateApp/js/polyfills/mdnPolyfill'),
+			History   = require('./stateApp/js/prototypes/historyPrototype');
+			
+			$(document).ready(function() {
+				console.log("Main ready");
+				var	history = Object.create(History), 
+						historyOptions = {initState:{ mode: 'basic'}},
+						modeModel = modeApp.start();
+				
+				toolApp.start(modeModel);
+				history.start(historyOptions);
+			});
 }());

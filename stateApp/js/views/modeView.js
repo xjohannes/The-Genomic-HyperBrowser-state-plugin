@@ -12,7 +12,7 @@
 				template: _.template('<a target="_self" href=""><%= this.toggleViewText(mode)%></a>'),
 				initialize: function(options) {
 					this.$el.on('click', this, this.toggleMode);
-					this.dispatcher.listenTo('change', this.update, this);
+					this.listenTo('change:mode', this.update, this);
 				},
 				render: function(props) {
 					var attributes = this.model.toJSON();
@@ -24,10 +24,14 @@
 				},
 				toggleMode: function(event) {
 					event.preventDefault();
+
+					//location.hash = (event.data.model.get('mode'));
 					//Is it better to trigger an event here. 
 					//I haven't done that because the view is instantiated with a model like backbone.
-					event.data.model.toggleMode();
+					//event.data.model.get('mode')
 					// Should also mention why I have to pass the this keyword with the method.
+
+					event.data.model.toggleMode();
 				},
 				update: function() {
 					this.render();

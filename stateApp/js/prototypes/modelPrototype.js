@@ -1,38 +1,70 @@
 (function() {
 'use strict';
-	var _ 			 = require('underscore'),
-			dispatcher = require('./dispatcherPrototype');
+	var _ 			   = require('underscore'),
+			Dispatcher = require('./dispatcherPrototype');
+	
 	var Model = (function() {
-		var modelProperties = {}, tmp;
+		var sharedModelState = {}, tmp;
 		
 		return {
 			init: function(attributes) {
-				modelProperties = attributes || {};	
+				//console.log('init modelPrototype');
+				this.modelState = {};
+				this.set(attributes);
 			},
 			set: function(newAttributes) {
-				if(newAttributes === null) { return; }
-				for(var i in newAttributes) {
-					tmp =_.escape(newAttributes[i])
-					if(!modelProperties[i]) {
-						modelProperties[i] = tmp;
-						this.triggerEvent('set', {model:this});
+				if(newAttributes === null || newAttributes === undefined) { return; }
+				var hasProp;
+				for(var prop in newAttributes) {
+					hasProp = _.has(this.modelState, prop);
+					if(typeof newAttributes[prop] !== 'object' ) {
+						tmp = newAttributes[prop] ;
+						this.modelState[prop] = tmp;
+					} else {
+						if(this.modelState[prop] === undefined) {
+							this.modelState[prop] = {};
+						}
+						var innerObj = newAttributes[prop];
+						
+						for(var innerProp in innerObj ) {
+							if(this.modelState[prop][innerProp] !== innerObj[innerProp]) {
+								this.modelState[prop][innerProp] = innerObj[innerProp]; 
+							}
+						}
 					}
-					else if(modelProperties[i] && ( modelProperties[i] !== tmp)) {
-						modelProperties[i] = tmp;
-						this.triggerEvent('change', {model:this});
-					} 				
 				}
-				
+
+				if(!newAttributes.silence ) {
+					if(!hasProp) {
+						this.triggerEvent('addEventType:set', {model:this});
+					} else {
+						this.triggerEvent('addEventType:change', {model:this});
+					} 
+				} else {
+						console.log("Set model: Silently");
+				}
 				return this;
 			},
 			get: function(key) {
-				return modelProperties[key];
+				if(this.modelState[key] !== undefined) {
+					return this.modelState[key];
+				}
+				return undefined;
 			},
 			toJSON: function() {
-				return _.clone(modelProperties);
+				return this.modelState;
+			},
+			deleteModel: function(prop) {
+				delete this.modelState[prop];
+			},
+ 			// For testing purposes only
+			eraseAllModels: function() {
+				for(var prop in this.modelState) {
+					delete this.modelState[prop];
+				}
 			}
 	};
 }());
-	_.extend(Model, dispatcher );
+	_.extend(Model, Object.create(Dispatcher) );
 	module.exports = Model;
 })();

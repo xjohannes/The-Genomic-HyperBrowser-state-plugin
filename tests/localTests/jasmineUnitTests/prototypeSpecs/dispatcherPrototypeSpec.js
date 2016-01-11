@@ -16,10 +16,13 @@ describe("A dispatcher PROTOTYPE", function() {
     });
     describe("On a Dispatcher instance one can", function() {
         ////////////// Initializing /////////////
-        var modeModel, modeView, dispatcher, subs, i, l, callbacks, result;
-
-        beforeEach(function() {
+        var modeModel, modeView, dispatcher, subs, i, l, callbacks, result, spy;
+        beforeAll(function() {
             dispatcher = Object.create(Dispatcher);
+            subs = dispatcher.getSubscribers();
+        });
+        beforeEach(function() {
+            
             modeModel  = Object.create(Model);
             modeModel.init();
             modeView   = Object.create(View);
@@ -32,6 +35,12 @@ describe("A dispatcher PROTOTYPE", function() {
             };
         });
         afterEach(function() {
+            for(var prop in subs) {
+                if(subs.hasOwnProperty(prop)) {
+                    dispatcher.stopListening(prop);
+                }  
+            }
+            subs = {};
             delete modeView.testMethod;
             modeModel, modeView, dispatcher, subs, callbacks,
             result, i, l = null;
@@ -58,24 +67,24 @@ describe("A dispatcher PROTOTYPE", function() {
             spyOn(modeView, 'testMethod').and.callThrough();
 
             dispatcher.listenTo('submit', modeView.testMethod, modeView);
-            dispatcher.triggerEvent('submit', {'someProp':'someArg'});
+            dispatcher.triggerEvent('submit', {'someProp':'someArg',  model: modeModel});
             
-            expect(modeView.testMethod).toHaveBeenCalledWith({'someProp':'someArg'});
+            expect(modeView.testMethod).toHaveBeenCalledWith({'someProp':'someArg',  model: modeModel});
         });
         it("call listeners when events is triggerEvented", function() {
             dispatcher.listenTo('charge', modeView.testMethod, modeView);
-            dispatcher.triggerEvent('charge', {'el':'section'});
+            dispatcher.triggerEvent('charge', {'el':'section', model: modeModel});
             expect(modeView.el.nodeName).toEqual('SECTION');
         });
         it("stopListening (unregister) to specified events", function(){
 
             var modeViewTestMethod = modeView.testMethod;
-            dispatcher.listenTo('cancel ', modeViewTestMethod, modeView );
+            dispatcher.listenTo('cancel', modeViewTestMethod, modeView );
             var subs = dispatcher.getSubscribers(), i, l, callbacks, 
                result;
-            callbacks = subs['cancel '];
+            callbacks = subs['cancel'];
             
-            dispatcher.stopListening('cancel ', modeViewTestMethod);
+            dispatcher.stopListening('cancel', modeViewTestMethod);
 
             for(i = 0; i < (l = callbacks.length); i+=1) {
                 if(callbacks[i][0] === modeViewTestMethod) {
@@ -84,19 +93,59 @@ describe("A dispatcher PROTOTYPE", function() {
             }
             expect(result).toBeUndefined();
         });
+        it("stopListening (unregister) all callbacks to specified events", function(){
+            var modeViewTestMethod = modeView.testMethod;
+            dispatcher.listenTo('change', modeViewTestMethod, modeView );
+            var subs = dispatcher.getSubscribers(), i, l, callbacks, 
+               result;
+    
+            dispatcher.stopListening('change');
+            result = subs['change'];
+
+            expect(result).toBeUndefined();
+        });
         it("fails silently if an event is triggered that no one listens to", function() {
             dispatcher.triggerEvent('noEvent', {'someProp':'someArg'});
         });
-        it("listen to all events", function() {
+        it("listen to any event", function() {
+            dispatcher.listenTo('any', modeView.testMethod, modeView);
+            dispatcher.triggerEvent('change:mode', {'el':'section', model: modeModel});
+            expect(modeView.el.nodeName).toEqual('SECTION');
+        
+        });
+        it("listen to any event does not trigger when non existing events are triggered", function() {
+            spy = spyOn(modeView, 'testMethod');
 
+            dispatcher.listenTo('any', modeView.testMethod, modeView);
+            dispatcher.triggerEvent('noEvent', {model: modeModel});
+        
+            expect(modeView.testMethod).not.toHaveBeenCalled();
+        
+        });
+        it("listen to any event of a specified type i.e. listen to 'change' events " + 
+            "when 'change:mode' is triggered", function() {
+            spy = spyOn(modeView, 'testMethod');
+            
             dispatcher.listenTo('change', modeView.testMethod, modeView);
-            dispatcher.triggerEvent('change', {'someProp':'someArg'});
-            //expect(modeView.el.nodeName).toEqual('SECTION');
-/*
-            expect(modeView.testMethod).toHaveBeenCalledWith({'someProp':'someArg'});
-            expect(modeView.testMethod).toHaveBeenCalledWith({'someProp':'someArg'});
-            expect(modeView.testMethod).not.toHaveBeenCalledWith({'someProp':'someArg'});
-        */
+            dispatcher.triggerEvent('change:mode', {model: modeModel});
+
+            expect(spy).toHaveBeenCalled();
+        });
+        it("should not trigger a  specific event, i.e. 'change:mode' when a general evnet, i.e. 'change' is triggered ", function() {
+            spy = spyOn(modeView, 'testMethod');
+            
+            dispatcher.listenTo('change:mode', modeView.testMethod, modeView);
+            dispatcher.triggerEvent('change', {model: modeModel});
+
+            expect(spy).not.toHaveBeenCalled();
+        });
+        it("should not trigger a general event, i.e. 'change' when a spesific, i.e. 'change:mode' is triggered ", function() {
+            spy = spyOn(modeView, 'testMethod').and.callThrough();
+            
+            dispatcher.listenTo('any', modeView.testMethod, modeView);
+            dispatcher.triggerEvent('change', {model: modeModel});
+
+            expect(spy).toHaveBeenCalled();
         });
     }); 
 });

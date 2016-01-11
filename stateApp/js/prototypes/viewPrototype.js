@@ -1,6 +1,8 @@
 (function() {
 'use strict';
-	var _ = require('underscore');
+	var _ = require('underscore'),
+			//$ = require('jquery'),
+	Dispatcher = require('./dispatcherPrototype');
 
 	/** the View object is the general prototype object for all views.
 	* Override methods in a new prototype object to get specific behavior for view instances.
@@ -21,11 +23,9 @@
 		init: function(options, customInitializationOptions) {
 			var viewOptionsWhiteList = ['model'];
 			_.extend(this, _.pick(options, viewOptionsWhiteList));
-			this.tagName = (options['tagName'] || 'div');
-			this.dispatcher = (options.dispatcher || null );
-			this.classNames = options['classNames'];
+			this.tagName = (options['el'] || options['tagName'] ||  'div');
+			this.classNames = options['classNames' || ''];
 			this.setElement(this.tagName);
-			//this.initOptions = custumInitializationOptions;
 			this.initialize(customInitializationOptions);
 			
 		},
@@ -36,7 +36,15 @@
 			return this;
 		},
 		setElement : function(element) {
-			this._setElement(document.createElement(element));
+			// Short form of the conditional under
+			//(element instanceof $) ? this._setElement(element) : this._setElement(document.createElement(element));
+			
+			if(element instanceof $) {
+				this._setElement(element);
+			} else {
+				this._setElement(document.createElement(element));
+			}
+			
 			return this;
 		}, 
 		// private methods:
@@ -48,7 +56,7 @@
 			}
 		}
 	};
-
+	_.extend(View, Object.create(Dispatcher) );
   module.exports = View;
 
 }());

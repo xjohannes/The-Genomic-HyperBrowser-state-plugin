@@ -1,108 +1,151 @@
-var Model = require('../../../../stateApp/js/prototypes/modelPrototype.js');
+var Model   = require('../../../../stateApp/js/prototypes/modelPrototype.js'),
+    History = require('../../../../stateApp/js/prototypes/historyPrototype.js'),
+    storage    = require('simplestorage.js');
 
 describe("A Model PROTOTYPE", function() {
-    
+    ////////////// Initializing /////////////
+        var model, spy, result, history;
+
+        beforeEach(function() {
+            storage.flush();
+            history = Object.create(History);
+            model    = Object.create(Model);
+            history.start({initState: {mode:'basic'}});
+            model.init();
+        });
+        afterEach(function() {
+            
+            //console.log('before stopListening');
+            //console.log(model.getSubscribers());
+            model.stopListening();
+            //console.log('after stopListening');
+            //console.log(model.getSubscribers());
+            model   = null;
+            result = null;
+            history.stop();
+
+        });
+        ////////////// End initializing /////////////
     it("is defined", function() {
         expect(Model).not.toBeUndefined();
     });
 
-    it("provides the get and set methods", function() {
-            var base = Model;
-            expect( _.isFunction(base.set) ).toBe(true);
-            expect( _.isFunction(base.get) ).toBe(true);
-            expect( _.isFunction(base.toJSON) ).toBe(true);
-            base = null;
+    xit("provides the get and set methods", function() {
+            var model = Model;
+            expect( _.isFunction(model.set) ).toBe(true);
+            expect( _.isFunction(model.get) ).toBe(true);
+            expect( _.isFunction(model.toJSON) ).toBe(true);
+            // model is a
+            expect( _.isFunction(model.listenTo) ).toBe(true);
+            model = null;
+    });
+    it("is a dispatcher", function() {
+            var model = Model;
+            expect( _.isFunction(model.listenTo) ).toBe(true);
+            expect( _.isFunction(model.stopListening) ).toBe(true);
+            expect( _.isFunction(model.triggerEvent) ).toBe(true);
+            model = null;
     });
     
     it("initializes models with properties when creating an object", function() {
-            base = Object.create(Model);
-            base.init({con:'construct text'});
+            model = Object.create(Model);
+            model.init({con:'construct text'});
 
-            expect( base.get('con') ).toEqual('construct text');
+            expect( model.get('con') ).toEqual('construct text');
         });
-    describe("On a SUPER model instance one can", function() {
+    describe("An instance of the model prototype provides", function() {
     
-        ////////////// Initializing /////////////
-        var base, spy, result;
+        
+        describe("The set method can:", function() {
+            it("call the set method", function() {
+                spyOn(model, 'set').and.callThrough();
+                result = model.set({model:'advanced'});
+                expect( model.set ).toHaveBeenCalled();
+                expect( model.set ).toHaveBeenCalledWith({model:'advanced'});
+            });
+            it("set several attributes", function() {
+                model.set({
+                    a:'alf',
+                    b:'bear'
+                });
 
-        beforeEach(function() {
-            base = Object.create(Model);
-            base.init();
-        });
-        afterEach(function() {
-            base   = null;
-            spy    = null;
-            result = null;
-        });
-        ////////////// End initializing /////////////
+                result = model.get('a');
+                expect(result).toEqual('alf');
+                result = model.get('b');
+                expect(result).toEqual('bear');
 
-        it("call the set method", function() {
-            spyOn(base, 'set').and.callThrough();
-            result = base.set({base:'advanced'});
-            expect( base.set ).toHaveBeenCalled();
-            expect( base.set ).toHaveBeenCalledWith({base:'advanced'});
-        });
-        it("call the get method", function() {
-            spyOn(base, 'get');
-            base.get('base');
+            });
+            it("set objects with objects ", function() {
+                var state = {
+                    a:'alf',
+                    obj:{ b:'bear',
+                          c: { d: 'dear'}
+                        }
+                    }
+                model.set(state);
+                result = model.toJSON();
+                expect(result).toEqual(state);
 
-            expect( base.get ).toHaveBeenCalled();
-        });
-        it("set several attributes", function() {
-            base.set({
-                a:'alf',
-                b:'bear'
+            });
+            it("trigger 'set' events on the model when setting a property", function() {
+                spy    = spyOn(model, 'triggerEvent').and.callThrough();
+                result = model.set({model:'advanced'});
+                expect( spy ).toHaveBeenCalled();
+                expect( spy ).toHaveBeenCalledWith('addEventType:set', {model:model});
             });
 
-            result = base.get('a');
-            expect(result).toEqual('alf');
-            result = base.get('b');
-            expect(result).toEqual('bear');
+            it("call the set method with no attribute and it will fail silently", function() {
+                spyOn(model, 'set');
+                model.set();
 
-        });
-        it("trigger 'set' events on the model when setting a property", function() {
-            spy    = spyOn(base, 'triggerEvent').and.callThrough();
-            result = base.set({base:'advanced'});
-            expect( spy ).toHaveBeenCalled();
-            expect( spy ).toHaveBeenCalledWith('set', {model:base});
-        });
-        it("trigger 'change' events on the model when setting a property that has already been set", function() {
-            spy    = spyOn(base, 'triggerEvent');
-            base.set({base:'basic'});
-            expect( spy ).toHaveBeenCalledWith('set', {model:base});
-            base.set({base:'advanced'});
-            expect( spy ).toHaveBeenCalledWith('change', {model:base});
-        });
-        it("call the set method with no attribute and it will fail silently", function() {
-            spyOn(base, 'set');
-            base.set();
-
-            expect( base.set ).toHaveBeenCalled();
-        });
-        it("get a named attribute", function() {
-            spyOn(base, 'get').and.callThrough();
+                expect( model.set ).toHaveBeenCalled();
+            });
             
-            base.set({base:'advanced'});
-            result = base.get('base');
-            
-            expect(result).toEqual('advanced');
-        });
-        it("escape HTML characters", function() {
-            base.set({escape : '<script>evil();&</script>'});
-            result = base.get('escape');
-            expect(result).toEqual('&lt;script&gt;evil();&amp;&lt;/script&gt;');
-        });
-        it("retrieve a models attributes in an object", function() {
-            base.set({
-                a:'alfa',
-                b:'beta'
+            it("trigger 'change' events on the model when setting a property that has already been set", function() {
+                
+                spy    = spyOn(model, 'triggerEvent');
+                model.set({model:'basic'});
+                expect( spy ).toHaveBeenCalledWith('addEventType:set', {model:model});
+                model.set({model:'advanced'});
+                expect( spy ).toHaveBeenCalledWith('addEventType:change', {model:model});
             });
-            result = base.toJSON();
-            expect(result).toEqual({
-                a:'alfa',
-                b:'beta'
+
+            xit("all models escape HTML characters when set", function() {
+                model.set({escape : '<script>evil();&</script>'});
+                result = model.get('escape');
+                expect(result).toEqual('&lt;script&gt;evil();&amp;&lt;/script&gt;');
+            });
+
+        });
+        describe("the get method can:" , function() {
+            it("call the get method", function() {
+                spy = spyOn(model, 'get');
+                model.get('model');
+
+                expect( spy ).toHaveBeenCalled();
+            });
+            it("get a named attribute", function() { 
+                model.set({model:'advanced'});
+                result = model.get('model');
+                
+                expect(result).toEqual('advanced');
             });
         });
+        describe("the toJSON method", function() {
+            it("clones the model:", function() {
+                // test setting objects on objects
+                model.set({
+                    a:'alfa',
+                    b:'beta'
+                });
+                result = model.toJSON();
+                expect(result).toEqual({
+                    a:'alfa',
+                    b:'beta'
+                });
+            });
+        });
+        
     });
 });
 
