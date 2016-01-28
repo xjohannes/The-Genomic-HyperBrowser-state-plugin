@@ -129,7 +129,7 @@
 										}
 									});
 								} else if( uriAnchor.makeAnchorMap().mode === undefined ) {
-									// To account for situations where mode is not set in url
+									// To account for situations where mode is not set in url Test github
 									modeModel.toggleMode({mode: modeModel.get('mode'), triggerState: 'history'});
 								} 
 		    			});
