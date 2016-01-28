@@ -6,12 +6,7 @@
 			polyfills = require('./stateApp/js/polyfills/mdnPolyfill'),
 			History   = require('./stateApp/js/prototypes/historyPrototype');
 			
-			console.log("Main: Reading main");
 			$(document).ready(function() {
-				console.log("Main: document ready");
-				/*location.pathname += 'hyper';
-				console.log('location object');
-				console.log(location.pathname);*/
 				var	history = Object.create(History), 
 						historyOptions = {initState:{ mode: 'basic'}},
 						modeModel = modeApp.start();
@@ -11698,6 +11693,7 @@ exports.makeAnchorString = makeAnchorString;
 	_.extend(ModeController, {
 		initialize: function() {
 			this.listenTo('change:mode', this.toggleMode, this); 
+			this.listenTo('change:history', this.toggleMode, this); 
 		},
 		toggleMode: function(attrs) {
 			if(this.model === null && attrs === undefined) {
@@ -11707,10 +11703,6 @@ exports.makeAnchorString = makeAnchorString;
 				this.model = attrs.model;			
 			} 
 			(this.model.get('mode') === "basic" ? window.force_left_panel('hide') : window.force_left_panel('show'));
-		},
-		test:function(attrs) {
-			console.log('CTRLmode test : ');
-			console.log(attrs);
 		}
 	});
 
@@ -11727,13 +11719,17 @@ exports.makeAnchorString = makeAnchorString;
 
 	_.extend(ToolController, {
 		initialize: function() {
-			this.listenTo('set:history', this.triggerTool, this);
-			this.listenTo('change:history', this.triggerTool, this);
-			this.listenTo('set:toolState', this.triggerTool, this);
-			//this.listenTo('change:mode', this.gsuite, this);
+			this.listenTo('set:history', this.parseEvent, this);
+			this.listenTo('set:tool', this.parseEvent, this);
+		},
+		parseEvent: function(eventObj) {
+			if(eventObj.modelState._tool.serializedForm !== undefined) {
+				this.createAjaxCall(eventObj);
+			} else {
+				this.triggerTool(eventObj);
+			}
 		},
 		triggerTool: function(eventObj) {
-			console.log("ToolCTRL: triggerTool");
 			if(this.model === null && eventObj === undefined) {
 				return;
 			}
@@ -11746,16 +11742,35 @@ exports.makeAnchorString = makeAnchorString;
 				
 				var tt = this.model.get('triggerAjax');
 				if(!tt) {
-					console.log("ToolCtrl: toolState:");
-					console.log(toolState);
 					window.top.frames['galaxy_main'].location.href = loc;
 				} 
 			}	
+		},
+			//*
+			/* Ajax call will only be executed when setting a tool for the first time.
+			*/
+		createAjaxCall: function(eventObj) {
+			var self = this, currentSelection, pathUrl, mainDocument;
+				currentSelection = eventObj.modelState._tool.currentSelection;
+				$.ajax({
+          type:'post',
+          url: 'hyper?#' + currentSelection,
+          data: eventObj.modelState._tool.serializedForm,
+          beforeSend: function() {
+         		self.triggerEvent('ajaxCall');
+					},
+          success: function (data) {
+          	console.log("AJAX was sent successfully");
+          	self.triggerEvent('change:tool', {model: this, data: data });
+          },
+          error: function (XMLHttpRequest, textStatus, errorThrown) {
+              console.log("AJAX Error");
+          }
+      });	
 		}
 	});
 	module.exports = ToolController;
 }());
-//https://hyperbrowser.uio.no/state/hyper?mako=generictool&tool_id=hb_multi_track_analysis_tool&isBasic=True
 },{"../prototypes/controllerPrototype":13,"underscore":5}],9:[function(require,module,exports){
  (function() {
 	'use strict';
@@ -11766,78 +11781,57 @@ exports.makeAnchorString = makeAnchorString;
 			storage    = require('simplestorage.js');
 
 	var modeApp = (function() {
-		var isRunning = false;
 		return {
 			attachModeListeners: function(modeModel) {
-				console.log("ModeApp: attachModeListeners");
 				var mainFrame = $('#galaxy_main'), mainContent, mainDocument;
 				// Attach basic/advanced button on main navigation
-				$('#masthead .title').on('click', function() {
+				$('#masthead .title').on('click', function(event) {
 					var tmpMode = storage.get('mode');
 					storage.flush();
 					storage.set('mode', tmpMode);
 				});
-				console.log("ModeApp: mainFrame:");
-				console.log(mainFrame);
-				// Attach mode functionality to basic and advanced sections on gsuite welcome page
+				
+				// Attach mode functionality to basic and advanced sections on gsuite main welcome page
 				mainFrame.on('load', function(e) {
-					console.log("ModeApp mainFrame on load");
 					mainContent  = $($('#galaxy_main')[0]).contents();
 					mainDocument = mainContent.filter(function() {
 								return this.nodeType === 9;
 							});
-					console.log("ModeApp: attachModeListeners: mainFrame active");
 					var tab1 = mainContent.find('#tab1');
-						console.log(tab1);
 						if(tab1.length > 0) {
-							console.log("ModeApp: G suite welcome page is active");
 							tab1.find('#basic').on('click', function() {
-								modeModel.toggleMode();
+								modeModel.toggleMode({'mode': 'basic', 'triggerState': 'history'});
 							});
 							tab1.find('#advanced').on('click', function() {
-								modeModel.toggleMode();
+								modeModel.toggleMode({'mode': 'advanced', 'triggerState': 'history'});
 							});
 						}
-					mainDocument.on('ready', function() {
-						console.log("ModeApp: attachModeListeners: mainFrame active");
-						console.log($('#tab1').length);
-						if($('#tab1').length < 0) {
-							console.log("ModeApp: G suite welcome page is active");
-							$('#basic').on('click', function() {
-								modeModel.toggleMode();
-							});
-							$('#advanced').on('click', function() {
-								modeModel.toggleMode();
-							});
-						} 
-					});
-					
 				});  
 			},
 			start: function() {
-				if(isRunning) {
-					console.log("ModeApp is already running. Exit this startup");
-					return true;
-				} else {
-					console.log('ModeApp: Starting ');
-					isRunning = true;
-				}
-				
-				
-				
 				var modeCTRL = Object.create(Controller),
-				//the dispatcher is a Singelton.
 				masthead   = $('#masthead tbody tr').first(),
 				modeModel  = Object.create(ModeModel),
 				modeView   = Object.create(ModeView);
+
 				this.attachModeListeners(modeModel);
-
-				modeModel.initialize({mode: 'basic'});
-				modeView.init({model: modeModel, tagName: 'td', classNames: 'tab'});
-				modeView.render();
-				masthead.prepend(modeView.el);
-				modeCTRL.init({model: modeModel});
-
+				// Set up main navigation
+				if(location.hash !== "" || location.href === "https://hyperbrowser.uio.no/state/" 
+					|| location.href === "https://hyperbrowser.uio.no/state/root") {
+					// Normal prep
+					// hide Analyse data tab
+					console.log('Normal mode');
+					masthead.find('td').first().hide();
+					modeModel.initialize({mode: 'basic'});
+					modeView.init({model: modeModel, tagName: 'td', classNames: 'tab'});
+					modeView.render();
+					masthead.prepend(modeView.el);
+					masthead.find('td').first().addClass('active');
+					modeCTRL.init({model: modeModel});
+				} else {
+					console.log("ModeApp: navigating outside app");
+				}
+				
 				return modeModel;
 			}
 		}
@@ -11881,10 +11875,13 @@ module.exports = modeApp;
 					(tmpMode === 'basic' ? this.set({mode: 'advanced'}) : this.set({mode: 'basic'}));
 				}
 				else if(state && state.mode === "basic" || state.mode === "advanced" ) {
-					triggerState = 'mode';
+					if(state.triggerState !== undefined) {
+						triggerState = state.triggerState;
+					} else {
+						triggerState = 'mode';
+					}
 					this.set({mode: state.mode});
-				} 
-				else {
+				} else {
 					// throw error
 					console.log('Error: toggleMode');
 				}
@@ -11892,13 +11889,11 @@ module.exports = modeApp;
 			addSetMode: function(args) {
 				if(args.model === this) {
 					this.triggerEvent('set:' + triggerState, {model:this, modelState:this.toJSON()});
-					
 				}
 			},
 			addChangeMode: function(args) {
 				if(args.model === this) {
 					this.triggerEvent('change:' + triggerState, {model:this, modelState:this.toJSON()});
-					this.triggerEvent('change:mode', {model:this, modelState:this.toJSON()});
 				}	
 			}
 		}
@@ -11927,37 +11922,23 @@ module.exports = modeApp;
 			},
 			eventSetup: function() {
 				this.listenTo('history:tool', this.setToolStateFromHistory, this);
-				//this.listenTo('change:mode', this.triggerModeChange, this);
+				this.listenTo('home', this.eraseAllModels, this);
 				this.listenTo('addEventType:set', this.addSetTool, this);
 				this.listenTo('addEventType:change', this.addChangeTool, this);
 			},
 			setToolState: function(state) {
 				triggerState = 'history';
-				/*if(state.triggerAjax === true ) {
-					console.log('ToolModel: setToolState: TriggerAjax from toolApp click');
-					console.log(state.triggerAjax);
-					//this.createAjaxCall(state);
-				}*/
 				this.set(state);
 			},
 			setToolStateFromHistory: function(state) {
-				triggerState = 'nothing';
-				console.log("ToolModel: setToolStateFromHistory");
+				// all model changes from history will use a fresh model, thus setting not changing state
+				this.eraseAllModels();
+				triggerState = 'tool';
 				if(state['_tool'] !== undefined) {
 					state['toolState'] = state['_tool'];
-					console.log("ToolModel: has _toollll");
 					delete state._tool;
 				}
-					
-				if(state.toolState.serializedForm === undefined) {
-					console.log("ToolModel: does NOT have hasSerialized form");
-					triggerState = 'toolState';
-					this.set(state);
-				} else {
-					console.log("ToolModel:  has hasSerialized form");
-					this.set(state);
-					this.createAjaxCall(state);
-				}
+				this.set(state);
 			},
 			addSetTool: function(args) {
 				if(args.model === this) {
@@ -11972,8 +11953,6 @@ module.exports = modeApp;
 			historify: function() {
 				var toolState = this.get('toolState'), 
 						historyfiedToolstate = {tool: this.get('tool')};
-						console.log('ToolModel: history: historyfiedToolstate.tool');
-						console.log(historyfiedToolstate.tool);
 				if(toolState !== undefined) {
 					historyfiedToolstate['_tool'] = {};
 					for(var prop in toolState) {
@@ -11983,68 +11962,7 @@ module.exports = modeApp;
 					}
 				}
 				return historyfiedToolstate;
-			},
-			createAjaxCall: function(state) {
-				var self = this, currentSelection, pathUrl, mainDocument;
-				if(state.toolState && state.toolState.currentSelection !== undefined) {
-					console.log("ToolModel: this.get('toolState')");
-					console.log(this.get('toolState'));
-					currentSelection = state.toolState.currentSelection;
-					pathUrl 				 = state.toolState.pathName;
-					console.log('pathName: ' + pathUrl + ", currentSelection: " + currentSelection);
-					$.ajax({
-            type:'post',
-            url: 'hyper?#' + currentSelection,
-            data: state.toolState.serializedForm,
-            beforeSend: function() {
-            	console.log("BEFORE SEND");
-           		self.triggerEvent('ajaxCall');
-						},
-            success: function (data) {
-            	console.log("AJAX was sent successfully");
-            	self.triggerEvent('change:tool', {model: this, data: data });
-            	
-            },
-            error: function (XMLHttpRequest, textStatus, errorThrown) {
-                console.log("AJAX Error");
-            }
-        });
-				} else {
-					console.log("ToolModel: NO Toolstate of this");
-				}
-				
-			}/*,
-			triggerModeChange: function() {
-				console.log("triggerModeChange");
-				console.log("triggerModeChange: " + this.get('mode'));
-				var mode = this.get('mode'), toolState = this.get('toolState'),
-						serializedForm;
-						console.log('TOOLMODEL: toolState');
-						console.log(toolState);
-				if(toolState && toolState.serializedForm !== undefined) {
-					serializedForm = toolState.serializedForm;
-					console.log('TOOLMODEL: toolState inside');
-					
-					if(mode !== undefined) {
-						console.log("mode !== undefined");
-						console.log(mode);
-						(mode === 'basic'? serializedForm += '&isBasic': serializedForm +="" );
-					
-						console.log("triggerModeChange: serializedForm: " + serializedForm );
-						this.createAjaxCall({
-							toolState: {
-								currentSelection: this.get('currentSelection'),
-								serializedForm: serializedForm
-							}
-						});
-					} 
-				} else {
-					
-					console.log("toolState or serializedForm is not defined");
-				}
-				
-				
-			}*/
+			}
 		}
  	}());
 
@@ -12109,7 +12027,6 @@ var _ 			   = require('underscore'),
 var Controller = {
 		init: function(options, customInitializationOptions) {
 			this.model = (options.model || null);
-
 			this.initialize(customInitializationOptions);
 			return this;
 		}
@@ -12132,14 +12049,12 @@ module.exports = Controller;
 					spesificEvent = eventType.split(":")[1];
 			// dispatching general events ei change
 			if(subscribers[generalEvent] !== undefined ) {
-				//console.log("1. generalEvent: " + generalEvent);
 				for(i = 0; i < (l = subscribers[generalEvent].length); i+=1) {
 						subscribers[generalEvent][i][0].call(subscribers[generalEvent][i][1], args);
 				}
 			}
 			//dispatching spesific events ie change:mode
 			if(subscribers[eventType] !== undefined && spesificEvent !== undefined) {
-				//console.log("2. eventType: " + eventType + " - length: " + subscribers[eventType].length);
 				for(i = 0; i < (l = subscribers[eventType].length); i+=1) {
 						subscribers[eventType][i][0].call(subscribers[eventType][i][1], args);
 				}
@@ -12163,25 +12078,20 @@ module.exports = Controller;
 					subscribers[eventType].push(tmp);
 					tmp			= null;
 				} else {
-					console.log("You can not listen to events without " 
-							+ "specifying a callback function or context: ");
 					if(callback !== undefined) console.log(callback);
 					if(context !== undefined) console.log(context);
-					console.log(eventType);
 				};
 			},
 			stopListening: function(eventType, callback) {
 				var eventCallbacks = subscribers[eventType]; 
 				if(eventType === undefined) {
 					for(var prop in subscribers) {
-						//console.log('STOP listening to all: ');
 						delete subscribers[prop];
 					}
 					return;
 				}
 				if(eventType !== undefined && callback === undefined) {
 							delete subscribers[eventType];
-							
 							return;
 				}
 				if(eventCallbacks !== undefined && typeof eventCallbacks.length === 'number') {
@@ -12214,20 +12124,15 @@ module.exports = Controller;
 		var History = (function() {
 		// Private variables
 		var triggerHashchange = true,
-
 		// Private methods 
 		_hashChangeHandler = function(event) {
-			var tmpUrlObject = uriAnchor.makeAnchorMap();
-			
+			var tmpUrlObject = uriAnchor.makeAnchorMap(); 
 			if(triggerHashchange) {
-				console.log("HISTORY: triggering hashchange event");
 				event.data.self.triggerEvent('history:change', tmpUrlObject);
 			} else {
-				//console.log("HISTORY: NOT triggering hashchange event");
 				setTimeout(function() {
 					triggerHashchange = true;
 				}, 500);
-				
 			}
 		},
 		_pushStateHandler = function(event) {
@@ -12237,7 +12142,6 @@ module.exports = Controller;
 		return {
 			start: function(options) {
 				uriAnchor.configModule({sub_delimit_char : "->"})
-				console.log("HISTORY: start");
 				options = options || {};
 				
 				if(options.pushState !== undefined) {
@@ -12281,29 +12185,23 @@ module.exports = Controller;
 			},
 			setModelState: function(locationObj) {
 				// Invariant: All states found in the location hash object is already in the storedStateObject
-				//console.log('History: SetModelState');
-				//console.log(locationObj);
 				var tmpModel = {}, dependentObj;
 				for(var prop in locationObj) {
 					tmpModel = {}; 
 					if(locationObj.hasOwnProperty(prop)) {
-						if(prop !== storage.get(prop) && (prop.charAt(0) !== '_')) {
+						if((prop.charAt(0) !== '_')) {
 							dependentObj = ('_' + prop);
 							tmpModel[prop] = locationObj[prop];
 							if(locationObj[dependentObj]) {
 								tmpModel[dependentObj] = locationObj[dependentObj];
 							}
-							//console.log('History: SetModelState: tmpModel:');
-							//console.log(tmpModel);
 							this.triggerEvent('history:' + prop, tmpModel);
 						} 
 					}
 				}
 			},
 			setHistory: function(modelObj) {
-				//console.log("History: setHistory");
-				var appState      = this.getStoredStateObject(), 
-						locationObj   = uriAnchor.makeAnchorMap(),
+				var locationObj   = uriAnchor.makeAnchorMap(),
 						tmpModelState = modelObj.modelState ;
 						if(typeof tmpModelState !== 'string') {
 							for(var prop in tmpModelState) {
@@ -12320,10 +12218,7 @@ module.exports = Controller;
 						uriAnchor.setAnchor(locationObj, {}, true);
 			},
 			changeHistory: function(modelObj) {
-				//console.log("History: changeHistory");
-				//console.log(modelObj);
-				var appState     = this.getStoredStateObject(), state,
-						locationObj   = uriAnchor.makeAnchorMap() ;
+				var state, locationObj   = uriAnchor.makeAnchorMap() ;
 						if ( (modelObj['modelState'] !== undefined)) {
 							state = modelObj.modelState;
 							for(var prop in state) {
@@ -12332,10 +12227,7 @@ module.exports = Controller;
 							}
 							triggerHashchange = false;
 							uriAnchor.setAnchor(locationObj, {}, true);
-						} else {
-							//console.log("HISTORY: changeHistory -> no model state");
-						 //throw error?
-						}		
+						} 
 			},
 			getStoredStateObject: function() {
 				var i, j, store = storage.index(), tmpStorageObj = {};
@@ -12360,7 +12252,6 @@ module.exports = Controller;
 		
 		return {
 			init: function(attributes) {
-				//console.log('init modelPrototype');
 				this.modelState = {};
 				this.set(attributes);
 			},
@@ -12393,7 +12284,7 @@ module.exports = Controller;
 						this.triggerEvent('addEventType:change', {model:this});
 					} 
 				} else {
-						console.log("Set model: Silently");
+						console.log("ModelPrototype: Set model: Silently");
 				}
 				return this;
 			},
@@ -12409,7 +12300,6 @@ module.exports = Controller;
 			deleteModel: function(prop) {
 				delete this.modelState[prop];
 			},
- 			// For testing purposes only
 			eraseAllModels: function() {
 				for(var prop in this.modelState) {
 					delete this.modelState[prop];
@@ -12424,7 +12314,6 @@ module.exports = Controller;
 (function() {
 'use strict';
 	var _ = require('underscore'),
-			//$ = require('jquery'),
 	Dispatcher = require('./dispatcherPrototype');
 
 	/** the View object is the general prototype object for all views.
@@ -12459,15 +12348,11 @@ module.exports = Controller;
 			return this;
 		},
 		setElement : function(element) {
-			// Short form of the conditional under
-			//(element instanceof $) ? this._setElement(element) : this._setElement(document.createElement(element));
-			
 			if(element instanceof $) {
 				this._setElement(element);
 			} else {
 				this._setElement(document.createElement(element));
 			}
-			
 			return this;
 		}, 
 		// private methods:
@@ -12490,51 +12375,34 @@ module.exports = Controller;
 			Controller = require('./controllers/toolCTRL'),
 			ToolModel  = require('./models/toolModel'),
 			ToolView   = require('./views/toolView'),
-			//GsuiteView   = require('./views/gsuiteView'),
 			uriAnchor  = require('urianchor');
 		
 	var toolApp = (function() {
 		var toolCTRL, dispatcher, toolModel, toolView, parentFrame,
 				toolsFrame, mainFrame, mainContent, mainDocument, toolState, 
-				currentMode,
-
-				/*_extractCorrectToolSearch = function(rawUrl) {
-					var pos, sliced = rawUrl;
-					for(var i = 0; i < 2; i = i + 1 ) {
-						pos = sliced.indexOf("/state/");
-						if(pos !== -1) {
-							sliced = sliced.slice((pos + 7), sliced.length);
-						} 
-					}
-					return sliced;
-				},*/
-				_setUpGsuitTabs = function(modeModel) {
-					var isBasic = mainDocument.find('#isBasic'), mode, anchorMap, tabValue,
-  						analysisTab = mainDocument.find('.tabs .tab-links li:nth-child(2)');
+				currentMode, isBasic, analysisTab,
+				
+				_setUpGsuiteTabs = function(modeModel) {
+					console.log("ToolApp: _setUpGsuiteTabs");
+					var mode, anchorMap, tabValue, basicTab,
+							advancedTab;
+					isBasic = mainDocument.find('#isBasic');
+					analysisTab = mainDocument.find('.tabs .tab-links li:nth-child(2)');
 					// Decides if the main gsuit tabs exist in main iFrame
 					if(analysisTab.length >= 1) {
-						//console.log("ToolApp: Tabs link DO exists");
-						//console.log(hasTabs);
-						//anchorMap = uriAnchor.makeAnchorMap();
-						mode = modeModel.get('mode');//anchorMap.mode;
-						(mode === 'basic'? tabValue = '#tab2': tabValue = '#tab3');
-						
-						analysisTab.find('a').attr('href', tabValue);
-						if(analysisTab.attr('class') === 'active') {
-							if(tabValue === '#tab2') {
-								tabValue = '#tab3';
-							} else {
-								tabValue = '#tab2';							
-							}
-							var currentTab = mainDocument.find('.tabs ' + tabValue);
-							//console.log('ToolApp: currentTab');
-							//console.log(currentTab);
-							currentTab.show().siblings().hide();
-						} 
+						basicTab = mainDocument.find('#tab-links li:nth-child(2)');
+						advancedTab = mainDocument.find('#tab-links li:nth-child(3)');
+						basicTab.on('click', function() {
+							modeModel.toggleMode({mode: 'basic', triggerState: 'history'});
+						});
+						advancedTab.on('click', function() {
+							modeModel.toggleMode({mode: 'advanced', triggerState: 'history'});
+						});
 					} 
 					// Decides if the tool provides both basic and advanced view
 					if(isBasic.length >= 1) {
-						isBasic.hide();
+						isBasic.parent().hide();
+
 						(isBasic.attr('checked') === 'checked'? mode = 'basic': mode = 'advanced');
   					// If the user hasn't come here from the tools panel the tool states mode is not set
   					if(toolModel.get('mode') === undefined) {
@@ -12543,29 +12411,21 @@ module.exports = Controller;
 								silence: true,
 								triggerAjax: true
 							});
-							//console.log("ToolApp: Setting toolModel mode: " + toolModel.get('mode'));
   					} else {
 							toolModel.deleteModel('mode');
-							//console.log("TOOLAPP: toolModel.get('mode')");
-							//console.log(toolModel.get('mode'));
 						}
 					} 			
 				};
 
 		return {
 			start: function(modeModel) {
-				//console.log("ToolApp: Starting");
-				/*$.ajaxSetup({
-						
-					});
-				//console.log("$.ajaxSetup()['beforeSend']");
-				//console.log($.ajaxSetup()['beforeSend']);*/
+
+				console.log("ToolApp: Start");
 				toolCTRL = Object.create(Controller);
 				//the dispatcher is a Singelton.
 				dispatcher = Object.create(Dispatcher);
 				toolModel  = Object.create(ToolModel);
 				toolView   = Object.create(ToolView);
-				//gsuitView  = Object.create(GsuiteView);
 				
 				parentFrame  = $('iframe');
 				toolsFrame = $('#galaxy_tools');
@@ -12578,79 +12438,73 @@ module.exports = Controller;
 							tagName   : mainFrame
 						});
 				
-				/*gsuitView.init(
-							model     : toolModel,
-							tagName   : mainFrame
-						});*/
-				
 				toolsFrame.on('load', function(e) {
-					//console.log("ToolApp: toolsFrame on load");
 					var toolsContent = $($('#galaxy_tools')[0]).contents(),
 							toolsDocument = toolsContent.filter(function() {
 		      			return this.nodeType === 9;
 		    			});
 
 					$('a.tool-link', toolsContent ).on('click', function(e) {
-						////console.log("ToolApp: toolsFrame on click");
 						e.preventDefault();
 						e.stopPropagation();
-						//var correctSearch = _extractCorrectToolSearch(e.currentTarget.search);
-						////console.log('_extractCorrectToolSearch $$**$*$*$*$*^*$^');
-						////console.log(correctSearch);
-						////console.log(e.currentTarget.search);
-						////console.log(e.currentTarget.name);
 						
 						toolState = {
 							tool: e.currentTarget.text,
 							toolState: {
 								pathName  : e.currentTarget.pathname,
-								toolSearch: e.currentTarget.search
-							},
-							triggerAjax  : false 
+								toolSearch: e.currentTarget.search,
+								serializedForm: undefined, 
+								currentSelection: undefined
+							}
 						};
 						toolModel.eraseAllModels();
 						toolModel.setToolState(toolState);
+
 					});
-					mainFrame.on('load', function(e) {
-							//console.log("ToolApp: MainFrame on load");
+
+				});	
+				mainFrame.on('load', function(e) {
 							mainContent = $($('#galaxy_main')[0]).contents();
 							mainDocument = mainContent.filter(function() {
 		      			return this.nodeType === 9;
 		    			});
 		    			
-		    			//mainContent.find('form select').css('background-color', '#BADA55');
 		    			mainDocument.ready(function() {
-		    				//console.log("ToolApp: MainFrame ready");
-		    				_setUpGsuitTabs(modeModel);
-		    				
-		    				var formSelects = mainContent.find('form select');
-								
-		    				formSelects.onchange = null;
-								
-								formSelects.change( function(e) {
-									//console.log("ToolApp: MainFrame selects on change");
+		    				$('.gsuitebox a', mainContent ).on('click', function(e) {
 									e.preventDefault();
 									e.stopPropagation();
-									//console.log("DEBUG 12.01 &&&&&&&&&&&&&&&&&&&");
-									//console.log(e);
-									mainDocument.ready(function() {
-										//console.log('ToolApp: ready after select change');
-										var form =  mainContent.find('form'),
+									toolState = {
+										tool: e.currentTarget.text,
+										toolState: {
+											pathName  : e.currentTarget.pathname,
+											toolSearch: e.currentTarget.search,
+											serializedForm: undefined, 
+											currentSelection: undefined
+										}
+									};
+									toolModel.eraseAllModels();
+									toolModel.setToolState(toolState);
+
+								});
+		    				_setUpGsuiteTabs(modeModel);
+		    				
+		    				var formSelects = mainContent.find('form select');
+								var form =  mainContent.find('form'),
 												serializedForm = form.serialize();
-										//console.log("ToolApp: E currentTarget.name");
-										//console.log(e.currentTarget.name);
-										toolModel.setToolState({
-											toolState: {
-												serializedForm: serializedForm, 
-												currentSelection: e.currentTarget.name
-											},
-											triggerAjax: true	
-										});
-		    					});
-							});
+								if(form.length > 0) {
+									console.log("ToolApp: Form exist in main");
+									toolModel.setToolState({
+										toolState: {
+											serializedForm: serializedForm, 
+											currentSelection: e.currentTarget.name
+										}
+									});
+								} else if( uriAnchor.makeAnchorMap().mode === undefined ) {
+									// To account for situations where mode is not set in url
+									modeModel.toggleMode({mode: modeModel.get('mode'), triggerState: 'history'});
+								} 
 		    			});
 						});
-				});	
 			}
  		}
  		
@@ -12658,138 +12512,49 @@ module.exports = Controller;
  module.exports = toolApp;
 }());
 
-
-/* (function() {
-	'use strict';
-	var Dispatcher = require('./prototypes/dispatcherPrototype'),
-			Controller = require('./controllers/toolCTRL'),
-			ToolModel  = require('./models/toolModel'),
-			ToolView   = require('./views/toolView'),
-			//GsuiteView   = require('./views/gsuiteView'),
-			uriAnchor  = require('urianchor');
-		
-	var toolApp = (function() {
-		return {
-			start: function(modeModel) {
-				//console.log("Starting toolApp");
-				var toolCTRL = Object.create(Controller),
-				//the dispatcher is a Singelton.
-				dispatcher = Object.create(Dispatcher),
-				toolModel  = Object.create(ToolModel),
-				toolView   = Object.create(ToolView),
-				toolsFrame = $('#galaxy_tools'),
-				mainFrame  = $('#galaxy_main'),
-				mainContent, mainDocument, toolState, currentMode;
-
-				toolCTRL.init({model: toolModel});
-				toolModel.initialize();
-				toolView.init({
-							model     : toolModel,
-							tagName   : mainFrame
-						});
-				toolsFrame.on('load', function() {
-					var toolsContent = $($('#galaxy_tools')[0]).contents(),
-							toolsDocument = toolsContent.filter(function() {
-		      			return this.nodeType === 9;
-		    			});
-					$('a.tool-link', toolsContent ).on('click', function(e) {
-						e.preventDefault();
-						e.stopPropagation();
-						
-						toolState = {
-							tool: e.currentTarget.text,
-							toolState: {
-								pathName  : e.currentTarget.pathname,
-								toolSearch: e.currentTarget.search
-							},
-							triggerAjax  : false 
-						};
-						toolModel.setToolState(toolState);
-					});
-					mainFrame.on('load', function() {
-							mainContent = $($('#galaxy_main')[0]).contents();
-							mainDocument = mainContent.filter(function() {
-		      			return this.nodeType === 9;
-		    			});
-		    			
-		    			//mainContent.find('form select').css('background-color', '#BADA55');
-		    			mainDocument.ready(function() {
-		    				var isBasic = mainDocument.find('#isBasic'), mode, anchorMap, tabValue,
-    						analysisTab = mainDocument.find('.tabs .tab-links li:nth-child(2)');
-    						if(analysisTab.length >= 1) {
-									mode  		= modeModel.get('mode');
-									(mode === 'basic'? tabValue = '#tab2': tabValue = '#tab3');
-									analysisTab.find('a').attr('href', tabValue);
-									if(analysisTab.attr('class') === 'active') {
-										if(tabValue === '#tab2') {
-											tabValue = '#tab3';
-										} else {
-											tabValue = '#tab2';
-										}
-										var currentTab = mainDocument.find('.tabs ' + tabValue);
-										currentTab.show().siblings().hide();
-									} 
-								} 
-								if(isBasic.length >= 1) {
-									isBasic.hide();
-									(isBasic.attr('checked') === 'checked'? mode = 'basic': mode = 'advanced');
-		    					if(toolModel.get('mode') === undefined) {
-		    						toolModel.setToolState({
-											mode: mode,	
-											silence: true,
-											triggerAjax: true
-										});
-		    					} else {
-										toolModel.deleteModel('mode');
-									}
-								} 
-		    				var formSelects = mainContent.find('form select');
-								formSelects.onchange = null;
-
-								formSelects.change( function(e) {
-									e.preventDefault();
-									e.stopPropagation();
-									console.log("DEBUG 12.01");
-									console.log(e);
-									mainDocument.ready(function() {
-										var form =  mainContent.find('form'),
-												serializedForm = form.serialize();
-										toolModel.setToolState({
-											toolState: {
-												serializedForm: serializedForm, 
-												currentSelection: e.currentTarget.name
-											},
-											triggerAjax: true	
-										});
-		    					});
-							});
-		    			});
-						});
-				});	
-			}
- 		}	
-	}());
- module.exports = toolApp;
-}());*/
-
-
-
 },{"./controllers/toolCTRL":8,"./models/toolModel":11,"./prototypes/dispatcherPrototype":14,"./views/toolView":20,"urianchor":6}],19:[function(require,module,exports){
 (function(){
 	'use strict';
 	var BaseView = require('../prototypes/viewPrototype'),
-	_    = require('underscore');
+	_    = require('underscore'),
+	storage    = require('simplestorage.js');
 
 	var ModeView = Object.create(BaseView);
 
 	_.extend(ModeView, (function() {
 			// private variables
-
+			var basicButton, advancedButton, modeButton, self;
 			return {
-				template: _.template('<a target="_self" href=""><%= this.toggleViewText(mode)%></a>'),
+				template: _.template(
+					'<a target="_self" id="mode" class="noLink"href="" ><%= this.toggleViewText(mode)%></a>' 
+					 + '<div class="submenu">'
+           	 + '<ul>'
+               + '<li class="<%= (mode === "basic"? "disabledMode": "") %>"><a href="" id="basic">Basic mode</a></li>'
+               + '<li class="<%= (mode === "advanced"? "disabledMode": "") %>"><a href="" id="advanced">Advanced mode</a></li>'
+             + '</ul>'
+           + '</div>'
+					),
 				initialize: function(options) {
-					this.$el.on('click', this, this.toggleMode);
+					this.eventSetup();
+					self = this;
+				},
+
+				eventSetup: function() {
+					this.$el.click(this.parseEvent);
 					this.listenTo('change:mode', this.update, this);
+					this.listenTo('change:history', this.update, this);
+				},
+				parseEvent: function(event) {
+					event.preventDefault();
+					var attr = event.target.id;
+					if(attr === 'mode') {
+						if(storage.index().length > 0) {
+							self.triggerEvent('history:change', self.getStoredStateObject() );
+						}
+					} else {
+						
+						self.model.toggleMode({mode: attr, triggerState: 'history'});
+					} 
 				},
 				render: function(props) {
 					var attributes = this.model.toJSON();
@@ -12797,12 +12562,13 @@ module.exports = Controller;
 					return this;
 				},
 				toggleViewText: function(text) {
-					return (text === "basic" ? "Advanced" : "Basic");
+					return (text === "basic" ? "Mode: Basic" : "Mode: Advanced");
+					//return (text === "basic" ? "Advanced mode" : "Basic mode");
 				},
 				toggleMode: function(event) {
 					event.preventDefault();
 
-					//location.hash = (event.data.model.get('mode'));
+					
 					//Is it better to trigger an event here. 
 					//I haven't done that because the view is instantiated with a model like backbone.
 					//event.data.model.get('mode')
@@ -12812,7 +12578,15 @@ module.exports = Controller;
 				},
 				update: function() {
 					this.render();
+				},
+				getStoredStateObject: function() {
+				var i, j, store = storage.index(), tmpStorageObj = {};
+				for(i = 0; i < (j = store.length); i +=1 ) {
+					tmpStorageObj[store[i]] = storage.get(store[i]);
 				}
+				console.log("ModeView: getStoredStateObject");
+				return tmpStorageObj;
+			}
 			}
 		}())
 	);
@@ -12820,7 +12594,7 @@ module.exports = Controller;
 	module.exports = ModeView; 
 
 }());
-},{"../prototypes/viewPrototype":17,"underscore":5}],20:[function(require,module,exports){
+},{"../prototypes/viewPrototype":17,"simplestorage.js":3,"underscore":5}],20:[function(require,module,exports){
 (function(){
 	'use strict';
 	var BaseView = require('../prototypes/viewPrototype'),
@@ -12838,6 +12612,7 @@ module.exports = Controller;
 				initialize: function(options) {
 					this.listenTo('change:tool', this.update, this);
 					this.listenTo('change:mode', this.updateMode, this);
+					this.listenTo('change:history', this.updateMode, this);
 					this.listenTo('ajaxCall', this.disablePage, this);
 
 				},
@@ -12858,9 +12633,6 @@ module.exports = Controller;
 				},
 				render: function(event) {
 					console.log("ToolView: render");
-					//this.$el.attr('src', 'hyper?');
-					//console.log(event.data);
-					//setCorrectIframeUrl(event.data);
 					this.mainWindow = this.el.contentWindow;
 					this.mainDocument = this.el.contentWindow.document;
 					var dataCorrected = this.setCorrectIframeUrl(event.data);
@@ -12870,11 +12642,6 @@ module.exports = Controller;
 					newDoc.close();
 					this.enablePage();
 					
-					//console.log('window.getGenomeInfo');
-					//console.log(this.mainWindow.getGenomeInfo);
-					//console.log(this.mainDocument.document);
-					
-				
 					return this;
 				},
 				update: function(event) {
@@ -12885,31 +12652,32 @@ module.exports = Controller;
 				* on modeChange.
 				*/
 				updateMode: function(event) {
-					//console.log('ToolView: updateMode');
-					////console.log(event);
+					if(event.model === this.model) {
+						console.log("ToolView: updateMode: exit method. Cause same model");
+						return;
+					} else {
 					
-					var tabValue, currentMode,// = this.model.get('mode'), 
-							isBasic, analysisTab, mode;
+					var tabValue, currentMode, 
+							isBasic, analysisTab, basicTab, advancedTab, mode;
 						this.mainContents = this.$el.contents();
 						this.mainDocument = this.mainContents.filter(function() {
 								return this.nodeType === 9;
 							});
 						isBasic = this.mainDocument.find('#isBasic');
 
-						// isBasic indicates a change triggered from the toolView (mainDocument) 
+						// isBasic indicates a change triggered from the toolView (mainDocument/mainIFrame) 
 						if(isBasic.length >= 1) {
 							currentMode = event.model.get('mode');
-		
+							console.log("currentMode");
+							console.log(currentMode);
 							var tmpToolState = this.model.get('toolState'), 
 									serializedForm, form;
 							if(currentMode === 'basic' ) {
-									//console.log("ToolView: checking basic checkbox");
+									console.log("ToolView: checking basic checkbox");
 			    					isBasic.prop('checked', 'checked');
-			    					//console.log(isBasic);
-			    					//$(isBasic).trigger("change");
 			    		} 
 	    				if(currentMode === 'advanced' ) {
-	    					//console.log("ToolView: removing basic checkbox");
+	    					console.log("ToolView: removing basic checkbox");
 	    					isBasic.removeAttr('checked');
 	    					//console.log(isBasic);
 	    				}
@@ -12921,34 +12689,28 @@ module.exports = Controller;
 							//console.log(serializedForm);
 							this.model.setToolState({
 								toolState: {
-									serializedForm: serializedForm,
-									silence: true
-								}
+									serializedForm: serializedForm
+								},
+								silence: true
 							});
 						} else {
-							//console.log("ToolView: mode is not set from the toolApp");
-							analysisTab = this.mainDocument.find('.tabs .tab-links li:nth-child(2)');
+							//console.log("ToolView: mode is set from the guide view (mainDocument/mainIFrame)");
+							analysisTab = this.mainDocument.find('#tab-links');
+							basicTab = this.mainDocument.find('#tab-links li:nth-child(2)');
+							advancedTab = this.mainDocument.find('#tab-links li:nth-child(3)');
 							if(analysisTab.length >= 1) {
-								//console.log("ToolView: Tabs link DO exists");
-								////console.log(hasTabs);
-								//anchorMap = uriAnchor.makeAnchorMap();
-								currentMode  		= event.model.get('mode');//anchorMap.mode;
+								currentMode  = event.model.get('mode');
 								(currentMode === 'basic'? tabValue = '#tab2': tabValue = '#tab3');
-								//console.log('mode');
-								//console.log(currentMode/**/);
-								analysisTab.find('a').attr('href', tabValue);
-								if(analysisTab.attr('class') === 'active') {
-									var currentTab = this.mainDocument.find('.tabs ' + tabValue);
-									//console.log('ToolView: currentTab');
-									//console.log(currentTab);
+								
+								var currentTab = this.mainDocument.find('.tabs ' + tabValue);
 									currentTab.show().siblings().hide();
-								} else {
-									//console.log("ToolView: Cant find 'li:nth-child(2)");
-									//console.log(analysisTab.attr('class'));
+
+								if(currentMode === 'basic') {
+									basicTab.addClass('active').siblings().removeClass('active');
+								} else if(currentMode === 'advanced') {
+									advancedTab.addClass('active').siblings().removeClass('active');
 								}
-						} else {
-							//console.log("ToolView: Tabs link DO NOT exists");
-							//console.log(hasTabs);
+							} 
 						}
 					}
 				}

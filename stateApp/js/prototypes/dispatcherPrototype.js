@@ -11,14 +11,12 @@
 					spesificEvent = eventType.split(":")[1];
 			// dispatching general events ei change
 			if(subscribers[generalEvent] !== undefined ) {
-				//console.log("1. generalEvent: " + generalEvent);
 				for(i = 0; i < (l = subscribers[generalEvent].length); i+=1) {
 						subscribers[generalEvent][i][0].call(subscribers[generalEvent][i][1], args);
 				}
 			}
 			//dispatching spesific events ie change:mode
 			if(subscribers[eventType] !== undefined && spesificEvent !== undefined) {
-				//console.log("2. eventType: " + eventType + " - length: " + subscribers[eventType].length);
 				for(i = 0; i < (l = subscribers[eventType].length); i+=1) {
 						subscribers[eventType][i][0].call(subscribers[eventType][i][1], args);
 				}
@@ -42,25 +40,20 @@
 					subscribers[eventType].push(tmp);
 					tmp			= null;
 				} else {
-					console.log("You can not listen to events without " 
-							+ "specifying a callback function or context: ");
 					if(callback !== undefined) console.log(callback);
 					if(context !== undefined) console.log(context);
-					console.log(eventType);
 				};
 			},
 			stopListening: function(eventType, callback) {
 				var eventCallbacks = subscribers[eventType]; 
 				if(eventType === undefined) {
 					for(var prop in subscribers) {
-						//console.log('STOP listening to all: ');
 						delete subscribers[prop];
 					}
 					return;
 				}
 				if(eventType !== undefined && callback === undefined) {
 							delete subscribers[eventType];
-							
 							return;
 				}
 				if(eventCallbacks !== undefined && typeof eventCallbacks.length === 'number') {

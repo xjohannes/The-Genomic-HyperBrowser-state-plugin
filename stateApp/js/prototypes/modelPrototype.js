@@ -8,7 +8,6 @@
 		
 		return {
 			init: function(attributes) {
-				//console.log('init modelPrototype');
 				this.modelState = {};
 				this.set(attributes);
 			},
@@ -41,7 +40,7 @@
 						this.triggerEvent('addEventType:change', {model:this});
 					} 
 				} else {
-						console.log("Set model: Silently");
+						console.log("ModelPrototype: Set model: Silently");
 				}
 				return this;
 			},
@@ -57,7 +56,6 @@
 			deleteModel: function(prop) {
 				delete this.modelState[prop];
 			},
- 			// For testing purposes only
 			eraseAllModels: function() {
 				for(var prop in this.modelState) {
 					delete this.modelState[prop];

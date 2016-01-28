@@ -7,7 +7,6 @@ var _ 			   = require('underscore'),
 var Controller = {
 		init: function(options, customInitializationOptions) {
 			this.model = (options.model || null);
-
 			this.initialize(customInitializationOptions);
 			return this;
 		}

@@ -1,7 +1,6 @@
 (function() {
 'use strict';
 	var _ = require('underscore'),
-			//$ = require('jquery'),
 	Dispatcher = require('./dispatcherPrototype');
 
 	/** the View object is the general prototype object for all views.
@@ -36,15 +35,11 @@
 			return this;
 		},
 		setElement : function(element) {
-			// Short form of the conditional under
-			//(element instanceof $) ? this._setElement(element) : this._setElement(document.createElement(element));
-			
 			if(element instanceof $) {
 				this._setElement(element);
 			} else {
 				this._setElement(document.createElement(element));
 			}
-			
 			return this;
 		}, 
 		// private methods:

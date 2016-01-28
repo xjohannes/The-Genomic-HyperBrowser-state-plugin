@@ -32,10 +32,13 @@
 					(tmpMode === 'basic' ? this.set({mode: 'advanced'}) : this.set({mode: 'basic'}));
 				}
 				else if(state && state.mode === "basic" || state.mode === "advanced" ) {
-					triggerState = 'mode';
+					if(state.triggerState !== undefined) {
+						triggerState = state.triggerState;
+					} else {
+						triggerState = 'mode';
+					}
 					this.set({mode: state.mode});
-				} 
-				else {
+				} else {
 					// throw error
 					console.log('Error: toggleMode');
 				}
@@ -43,13 +46,11 @@
 			addSetMode: function(args) {
 				if(args.model === this) {
 					this.triggerEvent('set:' + triggerState, {model:this, modelState:this.toJSON()});
-					
 				}
 			},
 			addChangeMode: function(args) {
 				if(args.model === this) {
 					this.triggerEvent('change:' + triggerState, {model:this, modelState:this.toJSON()});
-					this.triggerEvent('change:mode', {model:this, modelState:this.toJSON()});
 				}	
 			}
 		}
