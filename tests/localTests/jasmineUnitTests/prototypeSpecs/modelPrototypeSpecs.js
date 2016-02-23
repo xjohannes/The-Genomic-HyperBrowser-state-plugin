@@ -11,7 +11,7 @@ describe("A Model PROTOTYPE", function() {
             history = Object.create(History);
             model    = Object.create(Model);
             history.start({initState: {mode:'basic'}});
-            model.init();
+            model.init(null, 'mode');
         });
         afterEach(function() {
             
@@ -77,6 +77,7 @@ describe("A Model PROTOTYPE", function() {
             });
             it("set objects with objects ", function() {
                 var state = {
+                    modelName: 'mode',
                     a:'alf',
                     obj:{ b:'bear',
                           c: { d: 'dear'}
@@ -140,6 +141,7 @@ describe("A Model PROTOTYPE", function() {
                 });
                 result = model.toJSON();
                 expect(result).toEqual({
+                    modelName: 'mode',
                     a:'alfa',
                     b:'beta'
                 });

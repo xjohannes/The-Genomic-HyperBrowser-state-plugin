@@ -39,10 +39,7 @@
 					var tmp = [callback, context];
 					subscribers[eventType].push(tmp);
 					tmp			= null;
-				} else {
-					if(callback !== undefined) console.log(callback);
-					if(context !== undefined) console.log(context);
-				};
+				} 
 			},
 			stopListening: function(eventType, callback) {
 				var eventCallbacks = subscribers[eventType]; 

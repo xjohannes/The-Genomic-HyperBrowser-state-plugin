@@ -51,7 +51,7 @@
 			}
 		}
 	};
-	_.extend(View, Object.create(Dispatcher) );
+	_.extend(View, Dispatcher );
   module.exports = View;
 
 }());

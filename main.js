@@ -8,9 +8,21 @@
 			$(document).ready(function() {
 				var	history = Object.create(History), 
 						historyOptions = {initState:{ mode: 'basic'}},
-						modeModel = modeApp.start();
+						modeModel;
 				
-				toolApp.start(modeModel, toolApp);
-				history.start(historyOptions);
+				if(location.hash !== "" || location.href === (location.protocol + "//" +  location.host + extractInstance())
+					|| location.href === (location.protocol + "//" +  location.host + extractInstance() + "root")) {
+					
+					modeModel = modeApp.start();
+					toolApp.start(modeModel, toolApp);
+					history.start(historyOptions);
+				} else {
+					// When the user navigates outside app ie when going to the Shared Data part of the HyperBrowser
+					//console.log("ModeApp: navigating outside app");
+				}
 			});
+			var extractInstance = function() {
+				var instance = location.pathname.split("/")[1];
+				return "/" + instance + "/";
+			};
 }());

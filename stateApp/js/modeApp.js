@@ -1,7 +1,6 @@
- (function() {
+(function() {
 	'use strict';
-	var //Dispatcher = require('./prototypes/dispatcherPrototype'),
-			Controller = require('./controllers/modeCTRL'),
+	var Controller = require('./controllers/modeCTRL'),
 			ModeModel  = require('./models/modeModel'),
 			ModeView   = require('./views/modeView'),
 			storage    = require('simplestorage.js');
@@ -16,7 +15,10 @@
 					storage.flush();
 					storage.set('mode', tmpMode);
 				});
-				
+				// Attach toggle mode functionality on frame border arrow
+				$('#left-border-inner').on('click', function(event) {
+					modeModel.toggleMode();
+				}); 
 				// Attach mode functionality to basic and advanced sections on gsuite main welcome page
 				mainFrame.on('load', function(e) {
 					mainContent  = $($('#galaxy_main')[0]).contents();
@@ -41,22 +43,15 @@
 				modeView   = Object.create(ModeView);
 
 				this.attachModeListeners(modeModel);
-				// Set up main navigation
-				if(location.hash !== "" || location.href === "https://hyperbrowser.uio.no/state/" 
-					|| location.href === "https://hyperbrowser.uio.no/state/root") {
-					// Normal prep
-					// hide Analyse data tab
-					console.log('Normal mode');
-					masthead.find('td').first().hide();
-					modeModel.initialize({mode: 'basic'});
-					modeView.init({model: modeModel, tagName: 'td', classNames: 'tab'});
-					modeView.render();
-					masthead.prepend(modeView.el);
-					masthead.find('td').first().addClass('active');
-					modeCTRL.init({model: modeModel});
-				} else {
-					console.log("ModeApp: navigating outside app");
-				}
+			
+				// hide Analyse data tab
+				masthead.find('td').first().hide();
+				modeModel.initialize({mode: 'basic'});
+				modeView.init({model: modeModel, tagName: 'td', classNames: 'tab'});
+				modeView.render();
+				masthead.prepend(modeView.el);
+				masthead.find('td').first().addClass('active');
+				modeCTRL.init({model: modeModel});
 				
 				return modeModel;
 			}

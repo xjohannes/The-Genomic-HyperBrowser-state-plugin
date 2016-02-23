@@ -15,7 +15,7 @@ describe("A toolView Prototype ", function() {
         modeViewInst = null;
     });
     it("provides the methods of the ModeView prototype object", function() {
-        expect( _.isFunction(ModeView.toggleMode) ).toBe(true);
+        expect( _.isFunction(ModeView.eventSetup) ).toBe(true);
         modeViewInst = null;
     });
     

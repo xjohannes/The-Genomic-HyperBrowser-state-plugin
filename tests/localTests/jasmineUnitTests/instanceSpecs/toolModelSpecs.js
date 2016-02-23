@@ -22,10 +22,9 @@ describe("A ToolModel class / constructor", function() {
            toolModel.initialize();
            history.start({initState: { mode: 'basic' }}); 
            state = {
-                    toolState: {
-                        pathName: '/state/hyper',
-                        toolSearch: '?GALAXY_URL=https%3A//hyperbrowser.uio.no/state/tool_runner&tool_id=hb_test_1'
-                    },
+
+                    pathName: '/state/hyper',
+                    toolSearch: '?GALAXY_URL=https%3A//hyperbrowser.uio.no/state/tool_runner&tool_id=hb_test_1',
                     tool: 'Analyze genomic tracks',
                     toolHref: 'https://hyperbrowser.uio.no/state/hyper?GALAXY_URL=https%3A//hyperbrowser.uio.no/state/tool_runner&tool_id=hb_test_1',
                     toolClass: 'tool-link',
@@ -54,25 +53,24 @@ describe("A ToolModel class / constructor", function() {
             
     });
     it("sets a named attribute when creating an object, tested with get()", function() {
-            
-
             expect( toolModel.get('tool') ).toEqual('Analyze genomic tracks');
-            
         });
     it("sets a object as attribute when creating an object, tested with get()", function() {
-            
-            expect( toolModel.get('toolState') ).toEqual({
-                        pathName: '/state/hyper',
-                        toolSearch: '?GALAXY_URL=https%3A//hyperbrowser.uio.no/state/tool_runner&tool_id=hb_test_1'
-                    });
+            expect( toolModel.get('modelState') ).toEqual({
+                modelName: "tool",
+                pathName: '/state/hyper',
+                toolSearch: '?GALAXY_URL=https%3A//hyperbrowser.uio.no/state/tool_runner&tool_id=hb_test_1',
+                tool: 'Analyze genomic tracks',
+                toolHref: 'https://hyperbrowser.uio.no/state/hyper?GALAXY_URL=https%3A//hyperbrowser.uio.no/state/tool_runner&tool_id=hb_test_1',
+                toolClass: 'tool-link',
+                hostName: 'hyperbrowser.uio.no',
+                target: 'galaxy_main'
+            });
             
         });
-    xit("sets a object as attribute when creating an object, tested with toJSON()", function() {
-            //console.log('toolModel.toJSON()');
-            //console.log(toolModel.toJSON());
+    it("sets a object as attribute when creating an object, tested with toJSON()", function() {
             var testState = toolModel.toJSON();
-            //console.log('state');
-            //console.log(state);
+            state['modelName'] = 'tool';
             expect( testState ).toEqual(state);
             
         });

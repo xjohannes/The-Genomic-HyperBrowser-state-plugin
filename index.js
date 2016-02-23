@@ -9,11 +9,23 @@
 			$(document).ready(function() {
 				var	history = Object.create(History), 
 						historyOptions = {initState:{ mode: 'basic'}},
-						modeModel = modeApp.start();
+						modeModel;
 				
-				toolApp.start(modeModel, toolApp);
-				history.start(historyOptions);
+				if(location.hash !== "" || location.href === (location.protocol + "//" +  location.host + extractInstance())
+					|| location.href === (location.protocol + "//" +  location.host + extractInstance() + "root")) {
+					
+					modeModel = modeApp.start();
+					toolApp.start(modeModel, toolApp);
+					history.start(historyOptions);
+				} else {
+					// When the user navigates outside app ie when going to the Shared Data part of the HyperBrowser
+					//console.log("ModeApp: navigating outside app");
+				}
 			});
+			var extractInstance = function() {
+				var instance = location.pathname.split("/")[1];
+				return "/" + instance + "/";
+			};
 }());
 },{"./stateApp/js/modeApp.js":9,"./stateApp/js/polyfills/mdnPolyfill":12,"./stateApp/js/prototypes/historyPrototype":15,"./stateApp/js/toolsApp.js":18}],2:[function(require,module,exports){
 /*!
@@ -11689,20 +11701,61 @@ exports.makeAnchorString = makeAnchorString;
 			_    = require('underscore');
 
 	var ModeController = Object.create(BaseController);
-
 	_.extend(ModeController, {
 		initialize: function() {
-			this.listenTo('change:mode', this.toggleMode, this); 
-			this.listenTo('change:history', this.toggleMode, this); 
+			this.listenTo('change:mode', this.parseEvent, this); 
+			this.listenTo('change:history', this.parseEvent, this); 
 		},
-		toggleMode: function(attrs) {
-			if(this.model === null && attrs === undefined) {
-				return;
+		parseEvent: function(event) {
+			this.toggleLeftPanel();
+			if(event.model === this.model) {
+				this.updateMode(event);
 			}
-			if(this.model === null && attrs) {
-				this.model = attrs.model;			
-			} 
+		},
+		toggleLeftPanel: function(event) {
 			(this.model.get('mode') === "basic" ? window.force_left_panel('hide') : window.force_left_panel('show'));
+		},
+		updateMode: function(event) { 
+			this.mainFrame = $('#galaxy_main');
+			
+			var tabValue, currentMode, 
+					isBasic, analysisTab, basicTab, advancedTab, mode;
+				this.mainContents = this.mainFrame.contents();
+				this.mainDocument = this.mainContents.filter(function() {
+						return this.nodeType === 9;
+					});
+			isBasic = this.mainDocument.find('#isBasic');
+
+			// Mode change triggered from within a gsuite tool (mainDocument/mainIFrame) 
+			if(isBasic.length >= 1) {
+				currentMode = event.model.get('mode');
+				var serializedForm, form;
+				if(currentMode === 'basic' ) {
+    				isBasic.prop('checked', 'checked');
+    		} 
+				if(currentMode === 'advanced' ) {
+					isBasic.removeAttr('checked');
+				}
+				$(isBasic).trigger("change");
+			} else {
+				// mode change triggered from Gsuite tabs
+				analysisTab = this.mainDocument.find('#tab-links');
+				basicTab = this.mainDocument.find('#tab-links li:nth-child(2)');
+				advancedTab = this.mainDocument.find('#tab-links li:nth-child(3)');
+				if(analysisTab.length >= 1) {
+					currentMode  = event.model.get('mode');
+					(currentMode === 'basic'? tabValue = '#tab2': tabValue = '#tab3');
+					
+					var currentTab = this.mainDocument.find('.tabs ' + tabValue);
+						currentTab.show().siblings().hide();
+						
+					if(currentMode === 'basic') {
+						basicTab.addClass('active').siblings().removeClass('active');
+					} else if(currentMode === 'advanced') {
+						advancedTab.addClass('active').siblings().removeClass('active');
+					}
+				} 
+			}
 		}
 	});
 
@@ -11719,38 +11772,18 @@ exports.makeAnchorString = makeAnchorString;
 
 	_.extend(ToolController, {
 		initialize: function() {
-			this.listenTo('set:history', this.parseEvent, this);
 			this.listenTo('set:tool', this.parseEvent, this);
 		},
 		parseEvent: function(eventObj) {
 			if(eventObj.modelState._tool.serializedForm !== undefined) {
 				this.createAjaxCall(eventObj);
-			} else {
-				this.triggerTool(eventObj);
-			}
-		},
-		triggerTool: function(eventObj) {
-			if(this.model === null && eventObj === undefined) {
-				return;
-			}
-			if(this.model === null && eventObj !== undefined) {
-				this.model = eventObj.model;	
 			} 
-			var toolState = this.model.get('toolState'), loc;
-			if(toolState !== undefined && eventObj.model === this.model) {
-				loc = toolState.pathName + toolState.toolSearch;
-				
-				var tt = this.model.get('triggerAjax');
-				if(!tt) {
-					window.top.frames['galaxy_main'].location.href = loc;
-				} 
-			}	
 		},
 			//*
 			/* Ajax call will only be executed when setting a tool for the first time.
 			*/
 		createAjaxCall: function(eventObj) {
-			var self = this, currentSelection, pathUrl, mainDocument;
+			var self = this, currentSelection;
 				currentSelection = eventObj.modelState._tool.currentSelection;
 				$.ajax({
           type:'post',
@@ -11772,10 +11805,9 @@ exports.makeAnchorString = makeAnchorString;
 	module.exports = ToolController;
 }());
 },{"../prototypes/controllerPrototype":13,"underscore":5}],9:[function(require,module,exports){
- (function() {
+(function() {
 	'use strict';
-	var //Dispatcher = require('./prototypes/dispatcherPrototype'),
-			Controller = require('./controllers/modeCTRL'),
+	var Controller = require('./controllers/modeCTRL'),
 			ModeModel  = require('./models/modeModel'),
 			ModeView   = require('./views/modeView'),
 			storage    = require('simplestorage.js');
@@ -11790,7 +11822,10 @@ exports.makeAnchorString = makeAnchorString;
 					storage.flush();
 					storage.set('mode', tmpMode);
 				});
-				
+				// Attach toggle mode functionality on frame border arrow
+				$('#left-border-inner').on('click', function(event) {
+					modeModel.toggleMode();
+				}); 
 				// Attach mode functionality to basic and advanced sections on gsuite main welcome page
 				mainFrame.on('load', function(e) {
 					mainContent  = $($('#galaxy_main')[0]).contents();
@@ -11815,22 +11850,15 @@ exports.makeAnchorString = makeAnchorString;
 				modeView   = Object.create(ModeView);
 
 				this.attachModeListeners(modeModel);
-				// Set up main navigation
-				if(location.hash !== "" || location.href === "https://hyperbrowser.uio.no/state/" 
-					|| location.href === "https://hyperbrowser.uio.no/state/root") {
-					// Normal prep
-					// hide Analyse data tab
-					console.log('Normal mode');
-					masthead.find('td').first().hide();
-					modeModel.initialize({mode: 'basic'});
-					modeView.init({model: modeModel, tagName: 'td', classNames: 'tab'});
-					modeView.render();
-					masthead.prepend(modeView.el);
-					masthead.find('td').first().addClass('active');
-					modeCTRL.init({model: modeModel});
-				} else {
-					console.log("ModeApp: navigating outside app");
-				}
+			
+				// hide Analyse data tab
+				masthead.find('td').first().hide();
+				modeModel.initialize({mode: 'basic'});
+				modeView.init({model: modeModel, tagName: 'td', classNames: 'tab'});
+				modeView.render();
+				masthead.prepend(modeView.el);
+				masthead.find('td').first().addClass('active');
+				modeCTRL.init({model: modeModel});
 				
 				return modeModel;
 			}
@@ -11849,13 +11877,11 @@ module.exports = modeApp;
 	var ModeModel = Object.create(BaseModel);
 
 	_.extend(ModeModel, function() {
-		var sharedModeModelState = {}, triggerState = 'history';
+		var modelName = "mode", triggerState = 'history';
 		return {
 			initialize: function(modelState) {
 				this.eventSetup();
-				if(modelState) {
-					this.init(modelState);
-				}
+				this.init(modelState, modelName);
 			},
 			eventSetup: function() {
 				this.listenTo('history:mode', this.toggleMode, this);
@@ -11864,9 +11890,8 @@ module.exports = modeApp;
 			},
 			toggleMode: function(state) {
 				var tmpMode;
-				tmpMode = this.get('mode');
-			
 				if(state === undefined) {
+					tmpMode = this.get('mode');
 					triggerState = 'history';
 			 		// Should I implement the strategy design pattern here, just to get some more meat?
 			 		// It can be linked to state, but it isn't important to make the code easier to read 
@@ -11888,12 +11913,12 @@ module.exports = modeApp;
 			},
 			addSetMode: function(args) {
 				if(args.model === this) {
-					this.triggerEvent('set:' + triggerState, {model:this, modelState:this.toJSON()});
+					this.triggerEvent('set:' + triggerState, this);
 				}
 			},
 			addChangeMode: function(args) {
 				if(args.model === this) {
-					this.triggerEvent('change:' + triggerState, {model:this, modelState:this.toJSON()});
+					this.triggerEvent('change:' + triggerState, this);
 				}	
 			}
 		}
@@ -11906,19 +11931,18 @@ module.exports = modeApp;
 (function(){
 	'use strict';
 	var BaseModel = require('../prototypes/modelPrototype'),
-			_         = require('underscore');
+		_         = require('underscore');
 
 	var ToolModel = Object.create(BaseModel);
 
 	_.extend(ToolModel, function() {
-		var sharedToolModelState = {}, triggerState = 'history';
+		var modelName = "tool", triggerState = 'history';
 		return {
 			initialize: function(modelState) {
 				this.eventSetup();
 				this.modelState = {};
-				if(modelState) {
-					this.init(modelState);
-				}
+				this.init(modelState, modelName);
+
 			},
 			eventSetup: function() {
 				this.listenTo('history:tool', this.setToolStateFromHistory, this);
@@ -11934,20 +11958,17 @@ module.exports = modeApp;
 				// all model changes from history will use a fresh model, thus setting not changing state
 				this.eraseAllModels();
 				triggerState = 'tool';
-				if(state['_tool'] !== undefined) {
-					state['toolState'] = state['_tool'];
-					delete state._tool;
-				}
+
 				this.set(state);
 			},
 			addSetTool: function(args) {
 				if(args.model === this) {
-					this.triggerEvent( 'set:' + triggerState, { model: this, modelState: this.historify()});
+					this.triggerEvent( 'set:' + triggerState, this);
 				}
 			},
 			addChangeTool: function(args) {
 				if(args.model === this) {
-					this.triggerEvent('change:' + triggerState, { model: this, modelState: this.historify()});
+					this.triggerEvent('change:' + triggerState, this);
 				}	
 			},
 			historify: function() {
@@ -12020,7 +12041,6 @@ module.exports = (function() {
 },{}],13:[function(require,module,exports){
 (function() {
 'use strict';
-//var a = require('path');
 var _ 			   = require('underscore'),
 		Dispatcher = require('./dispatcherPrototype');
 
@@ -12077,10 +12097,7 @@ module.exports = Controller;
 					var tmp = [callback, context];
 					subscribers[eventType].push(tmp);
 					tmp			= null;
-				} else {
-					if(callback !== undefined) console.log(callback);
-					if(context !== undefined) console.log(context);
-				};
+				} 
 			},
 			stopListening: function(eventType, callback) {
 				var eventCallbacks = subscribers[eventType]; 
@@ -12124,16 +12141,13 @@ module.exports = Controller;
 		var History = (function() {
 		// Private variables
 		var triggerHashchange = true,
+			legalModels = ['mode', 'tool'],
 		// Private methods 
 		_hashChangeHandler = function(event) {
 			var tmpUrlObject = uriAnchor.makeAnchorMap(); 
 			if(triggerHashchange) {
 				event.data.self.triggerEvent('history:change', tmpUrlObject);
-			} else {
-				setTimeout(function() {
-					triggerHashchange = true;
-				}, 500);
-			}
+			} 
 		},
 		_pushStateHandler = function(event) {
 			console.log("History pushState eventType");
@@ -12145,7 +12159,6 @@ module.exports = Controller;
 				options = options || {};
 				
 				if(options.pushState !== undefined) {
-					// Passing this to the _hasChangeHandler. Write up about why!
 					$(window).on('pushState', {self: this}, this.pushStateHandler);
 				} else {
 					$(window).on('hashchange', {self: this}, this.hashChangeHandler);
@@ -12185,7 +12198,7 @@ module.exports = Controller;
 			},
 			setModelState: function(locationObj) {
 				// Invariant: All states found in the location hash object is already in the storedStateObject
-				var tmpModel = {}, dependentObj;
+				var tmpModel, dependentObj;
 				for(var prop in locationObj) {
 					tmpModel = {}; 
 					if(locationObj.hasOwnProperty(prop)) {
@@ -12193,7 +12206,7 @@ module.exports = Controller;
 							dependentObj = ('_' + prop);
 							tmpModel[prop] = locationObj[prop];
 							if(locationObj[dependentObj]) {
-								tmpModel[dependentObj] = locationObj[dependentObj];
+								tmpModel["modelState"] = locationObj[dependentObj];
 							}
 							this.triggerEvent('history:' + prop, tmpModel);
 						} 
@@ -12203,31 +12216,39 @@ module.exports = Controller;
 			setHistory: function(modelObj) {
 				var locationObj   = uriAnchor.makeAnchorMap(),
 						tmpModelState = modelObj.modelState ;
-						if(typeof tmpModelState !== 'string') {
-							for(var prop in tmpModelState) {
-								if( _.has(tmpModelState, prop)) {
-									locationObj[prop] = tmpModelState[prop];
-									storage.set(prop, tmpModelState[prop]);
-								}
+						//if(typeof tmpModelState !== 'string') {
+						for(var prop in tmpModelState) {
+							if( tmpModelState.hasOwnProperty(prop) && _.has(tmpModelState, prop)) {
+								locationObj[prop] = tmpModelState[prop];
+								storage.set(prop, tmpModelState[prop]);
 							}
-						} else {
-							locationObj[prop] = tmpModelState[prop];
-							storage.set(prop, tmpModelState[prop]);
 						}
+						//} //else {
+						//	locationObj[prop] = tmpModelState[prop];
+						//	storage.set(prop, tmpModelState[prop]);
+						//}
 						triggerHashchange = false;
 						uriAnchor.setAnchor(locationObj, {}, true);
 			},
 			changeHistory: function(modelObj) {
-				var state, locationObj   = uriAnchor.makeAnchorMap() ;
-						if ( (modelObj['modelState'] !== undefined)) {
+				// get stored object
+				// check if stored and new prop differ
+				// if equal skip
+				// only trigger changes for legalModels
+				console.log("History: Change history: modelObj");
+				console.log(modelObj.modelState);
+				var state, locationObj = uriAnchor.makeAnchorMap();
+						//if ( (modelObj['modelState'] !== undefined)) {
 							state = modelObj.modelState;
 							for(var prop in state) {
-								locationObj[prop] = state[prop];
-								storage.set(prop, state[prop]);
+								if(state.hasOwnProperty(prop)) {
+									locationObj[prop] = state[prop];
+									storage.set(prop, state[prop]);
+								}
 							}
 							triggerHashchange = false;
 							uriAnchor.setAnchor(locationObj, {}, true);
-						} 
+						//}
 			},
 			getStoredStateObject: function() {
 				var i, j, store = storage.index(), tmpStorageObj = {};
@@ -12245,54 +12266,61 @@ module.exports = Controller;
 (function() {
 'use strict';
 	var _ 			   = require('underscore'),
-			Dispatcher = require('./dispatcherPrototype');
+		Dispatcher = require('./dispatcherPrototype');
 	
 	var Model = (function() {
-		var sharedModelState = {}, tmp;
+		var tmp;
 		
 		return {
-			init: function(attributes) {
-				this.modelState = {};
-				this.set(attributes);
+			init: function(modelState, modelName) {
+				this.modelState = {
+					modelName : modelName
+				};
+				if(modelState) {
+					this.set(modelState);
+				}
 			},
 			set: function(newAttributes) {
 				if(newAttributes === null || newAttributes === undefined) { return; }
 				var hasProp;
 				for(var prop in newAttributes) {
-					hasProp = _.has(this.modelState, prop);
-					if(typeof newAttributes[prop] !== 'object' ) {
-						tmp = newAttributes[prop] ;
-						this.modelState[prop] = tmp;
-					} else {
-						if(this.modelState[prop] === undefined) {
-							this.modelState[prop] = {};
-						}
-						var innerObj = newAttributes[prop];
-						
-						for(var innerProp in innerObj ) {
-							if(this.modelState[prop][innerProp] !== innerObj[innerProp]) {
-								this.modelState[prop][innerProp] = innerObj[innerProp]; 
+					if (newAttributes.hasOwnProperty(prop)) {
+						hasProp = _.has(this.modelState, prop);
+						if (typeof newAttributes[prop] !== 'object') {
+							tmp = newAttributes[prop];
+							this.modelState[prop] = tmp;
+						} else {
+							if (this.modelState[prop] === undefined) {
+								this.modelState[prop] = {};
+							}
+							var innerObj = newAttributes[prop];
+
+							for (var innerProp in innerObj) {
+								if (innerObj.hasOwnProperty(innerProp)) {
+									if (this.modelState[prop][innerProp] !== innerObj[innerProp]) {
+										this.modelState[prop][innerProp] = innerObj[innerProp];
+									}
+								}
 							}
 						}
 					}
 				}
-
-				if(!newAttributes.silence ) {
-					if(!hasProp) {
-						this.triggerEvent('addEventType:set', {model:this});
-					} else {
-						this.triggerEvent('addEventType:change', {model:this});
-					} 
+				if(!hasProp) {
+					this.triggerEvent('addEventType:set', {model:this});
 				} else {
-						console.log("ModelPrototype: Set model: Silently");
-				}
+					this.triggerEvent('addEventType:change', {model:this});
+				} 
+				
 				return this;
 			},
 			get: function(key) {
 				if(this.modelState[key] !== undefined) {
 					return this.modelState[key];
+				} else if (key === "modelState") {
+					return this.modelState;
+				} else {
+					return undefined;
 				}
-				return undefined;
 			},
 			toJSON: function() {
 				return this.modelState;
@@ -12302,12 +12330,14 @@ module.exports = Controller;
 			},
 			eraseAllModels: function() {
 				for(var prop in this.modelState) {
-					delete this.modelState[prop];
+					if (this.modelState.hasOwnProperty(prop)) {
+						delete this.modelState[prop];
+					}
 				}
 			}
 	};
 }());
-	_.extend(Model, Object.create(Dispatcher) );
+	_.extend(Model, Dispatcher );
 	module.exports = Model;
 })();
 },{"./dispatcherPrototype":14,"underscore":5}],17:[function(require,module,exports){
@@ -12364,31 +12394,77 @@ module.exports = Controller;
 			}
 		}
 	};
-	_.extend(View, Object.create(Dispatcher) );
+	_.extend(View, Dispatcher );
   module.exports = View;
 
 }());
 },{"./dispatcherPrototype":14,"underscore":5}],18:[function(require,module,exports){
  (function() {
 	'use strict';
-	var Dispatcher = require('./prototypes/dispatcherPrototype'),
-			Controller = require('./controllers/toolCTRL'),
+	var Controller = require('./controllers/toolCTRL'),
 			ToolModel  = require('./models/toolModel'),
 			ToolView   = require('./views/toolView'),
 			uriAnchor  = require('urianchor');
 		
 	var toolApp = (function() {
-		var toolCTRL, dispatcher, toolModel, toolView, parentFrame,
+		var toolCTRL, toolModel, toolView, parentFrame,
 				toolsFrame, mainFrame, mainContent, mainDocument, toolState, 
 				currentMode, isBasic, analysisTab,
 				
+				_setUpMainFrame = function(modeModel) {
+					mainFrame.on('load', function(e) {
+						mainContent = $($('#galaxy_main')[0]).contents();
+						mainDocument = mainContent.filter(function() {
+	      			return this.nodeType === 9;
+	    			});
+	    			mainDocument.ready(function() {
+	    				$('.gsuitebox a', mainContent ).on('click', function(e) {
+								toolState = {
+									tool: e.currentTarget.text
+								};
+								toolModel.eraseAllModels();
+								toolModel.setToolState(toolState);
+							});
+	    				_setUpGsuiteTabs(modeModel);
+	    				
+	    				var formSelects = mainContent.find('form select');
+							var form =  mainContent.find('form'),
+											serializedForm = form.serialize();
+							if(form.length > 0) {
+								toolModel.setToolState({
+									serializedForm: serializedForm,
+									currentSelection: e.currentTarget.name
+								});
+							} else if( uriAnchor.makeAnchorMap().mode === undefined ) {
+								// To account for situations where mode is not set in url
+								modeModel.toggleMode({mode: modeModel.get('mode'), triggerState: 'history'});
+							} 
+	    			});
+					});
+				},
+				_setUpToolFrame = function (modeModel) {
+					////////////// Setting up the toolFrame ///////////////
+				toolsFrame.on('load', function(e) {
+					var toolsContent = $($('#galaxy_tools')[0]).contents(),
+							toolsDocument = toolsContent.filter(function() {
+		      			return this.nodeType === 9;
+		    			});
+
+						$('a.tool-link', toolsContent ).on('click', function(e) {
+							toolState = {
+								tool: e.currentTarget.text
+							};
+							toolModel.eraseAllModels();
+							toolModel.setToolState(toolState);
+						});
+					});
+				},
 				_setUpGsuiteTabs = function(modeModel) {
-					console.log("ToolApp: _setUpGsuiteTabs");
 					var mode, anchorMap, tabValue, basicTab,
 							advancedTab;
 					isBasic = mainDocument.find('#isBasic');
 					analysisTab = mainDocument.find('.tabs .tab-links li:nth-child(2)');
-					// Decides if the main gsuit tabs exist in main iFrame
+					// Decides if the main g-suite tabs exist in main iFrame
 					if(analysisTab.length >= 1) {
 						basicTab = mainDocument.find('#tab-links li:nth-child(2)');
 						advancedTab = mainDocument.find('#tab-links li:nth-child(3)');
@@ -12399,31 +12475,15 @@ module.exports = Controller;
 							modeModel.toggleMode({mode: 'advanced', triggerState: 'history'});
 						});
 					} 
-					// Decides if the tool provides both basic and advanced view
+					// Decides if the tool provides both basic and advanced view, ie is a g-suite tool
 					if(isBasic.length >= 1) {
 						isBasic.parent().hide();
-
-						(isBasic.attr('checked') === 'checked'? mode = 'basic': mode = 'advanced');
-  					// If the user hasn't come here from the tools panel the tool states mode is not set
-  					if(toolModel.get('mode') === undefined) {
-  						toolModel.setToolState({
-								mode: mode,	
-								silence: true,
-								triggerAjax: true
-							});
-  					} else {
-							toolModel.deleteModel('mode');
-						}
 					} 			
 				};
 
 		return {
 			start: function(modeModel) {
-
-				console.log("ToolApp: Start");
 				toolCTRL = Object.create(Controller);
-				//the dispatcher is a Singelton.
-				dispatcher = Object.create(Dispatcher);
 				toolModel  = Object.create(ToolModel);
 				toolView   = Object.create(ToolView);
 				
@@ -12437,74 +12497,9 @@ module.exports = Controller;
 							model     : toolModel,
 							tagName   : mainFrame
 						});
-				
-				toolsFrame.on('load', function(e) {
-					var toolsContent = $($('#galaxy_tools')[0]).contents(),
-							toolsDocument = toolsContent.filter(function() {
-		      			return this.nodeType === 9;
-		    			});
-
-					$('a.tool-link', toolsContent ).on('click', function(e) {
-						e.preventDefault();
-						e.stopPropagation();
-						
-						toolState = {
-							tool: e.currentTarget.text,
-							toolState: {
-								pathName  : e.currentTarget.pathname,
-								toolSearch: e.currentTarget.search,
-								serializedForm: undefined, 
-								currentSelection: undefined
-							}
-						};
-						toolModel.eraseAllModels();
-						toolModel.setToolState(toolState);
-
-					});
-
-				});	
-				mainFrame.on('load', function(e) {
-							mainContent = $($('#galaxy_main')[0]).contents();
-							mainDocument = mainContent.filter(function() {
-		      			return this.nodeType === 9;
-		    			});
-		    			
-		    			mainDocument.ready(function() {
-		    				$('.gsuitebox a', mainContent ).on('click', function(e) {
-									e.preventDefault();
-									e.stopPropagation();
-									toolState = {
-										tool: e.currentTarget.text,
-										toolState: {
-											pathName  : e.currentTarget.pathname,
-											toolSearch: e.currentTarget.search,
-											serializedForm: undefined, 
-											currentSelection: undefined
-										}
-									};
-									toolModel.eraseAllModels();
-									toolModel.setToolState(toolState);
-
-								});
-		    				_setUpGsuiteTabs(modeModel);
-		    				
-		    				var formSelects = mainContent.find('form select');
-								var form =  mainContent.find('form'),
-												serializedForm = form.serialize();
-								if(form.length > 0) {
-									console.log("ToolApp: Form exist in main");
-									toolModel.setToolState({
-										toolState: {
-											serializedForm: serializedForm, 
-											currentSelection: e.currentTarget.name
-										}
-									});
-								} else if( uriAnchor.makeAnchorMap().mode === undefined ) {
-									// To account for situations where mode is not set in url
-									modeModel.toggleMode({mode: modeModel.get('mode'), triggerState: 'history'});
-								} 
-		    			});
-						});
+					
+				_setUpMainFrame(modeModel);
+				_setUpToolFrame(modeModel);
 			}
  		}
  		
@@ -12512,7 +12507,7 @@ module.exports = Controller;
  module.exports = toolApp;
 }());
 
-},{"./controllers/toolCTRL":8,"./models/toolModel":11,"./prototypes/dispatcherPrototype":14,"./views/toolView":20,"urianchor":6}],19:[function(require,module,exports){
+},{"./controllers/toolCTRL":8,"./models/toolModel":11,"./views/toolView":20,"urianchor":6}],19:[function(require,module,exports){
 (function(){
 	'use strict';
 	var BaseView = require('../prototypes/viewPrototype'),
@@ -12523,10 +12518,12 @@ module.exports = Controller;
 
 	_.extend(ModeView, (function() {
 			// private variables
-			var basicButton, advancedButton, modeButton, self;
+			// Self is needed because the parseEvent method is called from a click event and not from this object,
+			// shadowing the this keyword.
+			var self;
 			return {
 				template: _.template(
-					'<a target="_self" id="mode" class="noLink"href="" ><%= this.toggleViewText(mode)%></a>' 
+					'<a target="_self" id="mode" class="noLink" href="" ><%= this.toggleViewText(mode)%></a>' 
 					 + '<div class="submenu">'
            	 + '<ul>'
                + '<li class="<%= (mode === "basic"? "disabledMode": "") %>"><a href="" id="basic">Basic mode</a></li>'
@@ -12538,7 +12535,6 @@ module.exports = Controller;
 					this.eventSetup();
 					self = this;
 				},
-
 				eventSetup: function() {
 					this.$el.click(this.parseEvent);
 					this.listenTo('change:mode', this.update, this);
@@ -12546,15 +12542,11 @@ module.exports = Controller;
 				},
 				parseEvent: function(event) {
 					event.preventDefault();
+					event.stopPropagation();
 					var attr = event.target.id;
-					if(attr === 'mode') {
-						if(storage.index().length > 0) {
-							self.triggerEvent('history:change', self.getStoredStateObject() );
-						}
-					} else {
-						
+					if(attr !== 'mode') {
 						self.model.toggleMode({mode: attr, triggerState: 'history'});
-					} 
+					}
 				},
 				render: function(props) {
 					var attributes = this.model.toJSON();
@@ -12563,30 +12555,10 @@ module.exports = Controller;
 				},
 				toggleViewText: function(text) {
 					return (text === "basic" ? "Mode: Basic" : "Mode: Advanced");
-					//return (text === "basic" ? "Advanced mode" : "Basic mode");
-				},
-				toggleMode: function(event) {
-					event.preventDefault();
-
-					
-					//Is it better to trigger an event here. 
-					//I haven't done that because the view is instantiated with a model like backbone.
-					//event.data.model.get('mode')
-					// Should also mention why I have to pass the this keyword with the method.
-
-					event.data.model.toggleMode();
 				},
 				update: function() {
 					this.render();
-				},
-				getStoredStateObject: function() {
-				var i, j, store = storage.index(), tmpStorageObj = {};
-				for(i = 0; i < (j = store.length); i +=1 ) {
-					tmpStorageObj[store[i]] = storage.get(store[i]);
 				}
-				console.log("ModeView: getStoredStateObject");
-				return tmpStorageObj;
-			}
 			}
 		}())
 	);
@@ -12611,10 +12583,7 @@ module.exports = Controller;
 				
 				initialize: function(options) {
 					this.listenTo('change:tool', this.update, this);
-					this.listenTo('change:mode', this.updateMode, this);
-					this.listenTo('change:history', this.updateMode, this);
 					this.listenTo('ajaxCall', this.disablePage, this);
-
 				},
 				disablePage: function() {
 					background = $('#background');
@@ -12632,11 +12601,8 @@ module.exports = Controller;
 					 
 				},
 				render: function(event) {
-					console.log("ToolView: render");
-					this.mainWindow = this.el.contentWindow;
 					this.mainDocument = this.el.contentWindow.document;
 					var dataCorrected = this.setCorrectIframeUrl(event.data);
-					//console.log(dataCorrected);
 					var newDoc = this.mainDocument.open("text/html", "replace");
 					newDoc.write(dataCorrected);
 					newDoc.close();
@@ -12646,73 +12612,6 @@ module.exports = Controller;
 				},
 				update: function(event) {
 					this.render(event);
-				},
-				/**
-				* Method for managing the gsuite tabs in the mainDocument
-				* on modeChange.
-				*/
-				updateMode: function(event) {
-					if(event.model === this.model) {
-						console.log("ToolView: updateMode: exit method. Cause same model");
-						return;
-					} else {
-					
-					var tabValue, currentMode, 
-							isBasic, analysisTab, basicTab, advancedTab, mode;
-						this.mainContents = this.$el.contents();
-						this.mainDocument = this.mainContents.filter(function() {
-								return this.nodeType === 9;
-							});
-						isBasic = this.mainDocument.find('#isBasic');
-
-						// isBasic indicates a change triggered from the toolView (mainDocument/mainIFrame) 
-						if(isBasic.length >= 1) {
-							currentMode = event.model.get('mode');
-							console.log("currentMode");
-							console.log(currentMode);
-							var tmpToolState = this.model.get('toolState'), 
-									serializedForm, form;
-							if(currentMode === 'basic' ) {
-									console.log("ToolView: checking basic checkbox");
-			    					isBasic.prop('checked', 'checked');
-			    		} 
-	    				if(currentMode === 'advanced' ) {
-	    					console.log("ToolView: removing basic checkbox");
-	    					isBasic.removeAttr('checked');
-	    					//console.log(isBasic);
-	    				}
-							//if(tmpToolState.serializedForm === undefined) {
-							$(isBasic).trigger("change");
-							form = this.mainDocument.find('form');
-							serializedForm = form.serialize();
-							//console.log('ToolView: serializedForm');
-							//console.log(serializedForm);
-							this.model.setToolState({
-								toolState: {
-									serializedForm: serializedForm
-								},
-								silence: true
-							});
-						} else {
-							//console.log("ToolView: mode is set from the guide view (mainDocument/mainIFrame)");
-							analysisTab = this.mainDocument.find('#tab-links');
-							basicTab = this.mainDocument.find('#tab-links li:nth-child(2)');
-							advancedTab = this.mainDocument.find('#tab-links li:nth-child(3)');
-							if(analysisTab.length >= 1) {
-								currentMode  = event.model.get('mode');
-								(currentMode === 'basic'? tabValue = '#tab2': tabValue = '#tab3');
-								
-								var currentTab = this.mainDocument.find('.tabs ' + tabValue);
-									currentTab.show().siblings().hide();
-
-								if(currentMode === 'basic') {
-									basicTab.addClass('active').siblings().removeClass('active');
-								} else if(currentMode === 'advanced') {
-									advancedTab.addClass('active').siblings().removeClass('active');
-								}
-							} 
-						}
-					}
 				}
 			}
 		}())

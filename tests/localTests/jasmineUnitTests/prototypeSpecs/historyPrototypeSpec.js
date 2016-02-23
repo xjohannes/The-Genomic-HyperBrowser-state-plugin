@@ -1,13 +1,13 @@
 var History    = require('../../../../stateApp/js/prototypes/historyPrototype.js'),
-		Dispatcher = require('../../../../stateApp/js/prototypes/dispatcherPrototype.js'),
+    Dispatcher = require('../../../../stateApp/js/prototypes/dispatcherPrototype.js'),
     storage    = require('simplestorage.js'),
     ModeModel  = require('../../../../stateApp/js/models/modeModel.js'),
     ToolModel  = require('../../../../stateApp/js/models/toolModel.js'),
     ModeView       = require('../../../../stateApp/js/views/modeView.js'),
     uriAnchor  = require('urianchor');
 
-xdescribe("A history PROTOTYPE", function() {
-	var history, eventSpy, spy, subs, dispatcher, modelDispatcher;
+describe("A history PROTOTYPE", function() {
+  var history, eventSpy, spy, subs, dispatcher, result2;
   
   it("is defined", function() {
       expect(History).not.toBeUndefined();
@@ -15,22 +15,16 @@ xdescribe("A history PROTOTYPE", function() {
   beforeEach(function() {
     storage.flush();
     location.hash = uriAnchor.setAnchor({mode:"advanced"}, {}, true);
-    //console.log('location.hash historySpec');
-    //console.log(location.hash);
-  	history = Object.create(History);
+
+    history = Object.create(History);
     history.start({initState: { mode: 'basic' }});
-  	dispatcher  = Object.create(Dispatcher);
-    //console.log(location.hash);
+    dispatcher  = Object.create(Dispatcher);
   });
   afterEach(function() {
     history.stop();
-  	history = null;
+    history = null;
     dispatcher.stopListening();
-    /*
-  	for(var prop in subs) {
-       	dispatcher.stopListeningl(prop);
-      }
-      */
+
   }); 
   it("provides the start and stop methods", function() {
     expect( _.isFunction(history.start) ).toBe(true);
@@ -44,81 +38,107 @@ xdescribe("A history PROTOTYPE", function() {
   }); 
   it("can set eventlisteners on hashchange", function() {
     location.hash = $.param({mode:"basic"});
-  	eventSpy = spyOnEvent(window, 'hashchange');
-  	spy      = spyOn(history, 'hashChangeHandler');
-  	history.start();
-   	$(window).trigger( "hashchange" );
-   	expect(eventSpy).toHaveBeenTriggered();
-   	expect(spy).toHaveBeenCalled();
-   	});
+    eventSpy = spyOnEvent(window, 'hashchange');
+    spy      = spyOn(history, 'hashChangeHandler');
+    history.start();
+    $(window).trigger( "hashchange" );
+    expect(eventSpy).toHaveBeenTriggered();
+    expect(spy).toHaveBeenCalled();
+    });
   it("can set eventlisteners on pushState "
-  		+ "if options.pushState is true", function() {
+      + "if options.pushState is true", function() {
     location.hash = $.param({mode:"basic"});
-  	spy      = spyOn(history, 'pushStateHandler');
-  	history.start({pushState: true});
-   	$(window).trigger( "pushState" );
-   	expect(spy).toHaveBeenCalled();
-   	});
+    spy      = spyOn(history, 'pushStateHandler');
+    history.start({pushState: true});
+    $(window).trigger( "pushState" );
+    expect(spy).toHaveBeenCalled();
+    });
   describe("The hashChange event handler should", function () {
-  	var modeModel;
-  	beforeEach(function() {
-  		modeModel = Object.create(ModeModel);
-  		modeModel.initialize({mode:'basic'});
-  		subs = dispatcher.getSubscribers();
-  	});
-  	afterEach(function() {
-  		for(var prop in subs) {
-  			//console.log("subs");
-       	modeModel.stopListening(prop);
+    var modeModel, toolModel2;
+    beforeEach(function() {
+      modeModel = Object.create(ModeModel);
+      modeModel.initialize({mode:'basic'});
+      subs = dispatcher.getSubscribers();
+    });
+    afterEach(function() {
+      for(var prop in subs) {
+        //console.log("subs");
+        modeModel.stopListening(prop);
       }
       modeModel = null;
       subs = {}; 
-  	});
-  	
-  	it("trigger a 'state:mode' event sets the model" +
-  		 "following the fake mode object created in historyPrototype",function() {
-  		spy = spyOn(modeModel, 'set').and.callThrough();
-   		$(window).trigger( "hashchange" );
-      expect(spy).toHaveBeenCalled();
-  		expect(spy).toHaveBeenCalledWith({mode: 'advanced'});
-  	});
-  	
-  	it("set the model and triggers an addEventType:change event",function() {
-  		spy = spyOn(modeModel, 'triggerEvent');
-  		$(window).trigger( "hashchange" );
-      expect(spy).toHaveBeenCalledWith("addEventType:change", {model: modeModel});
-  	});
-
-  	it("set the model and triggers a change:mode event", function() {
-      var view = Object.create(ModeView);
-  		spy = spyOn(modeModel, 'triggerEvent').and.callThrough();
-  		$(window).trigger( "hashchange" );
-      //expect(spy).toHaveBeenCalledWith('change:mode', {model:modeModel, modelState: {mode:'mode'}});
-  	});
-    it("setHistory (from model change):",function() {
-      //location.hash = $.param({mode:"advanced"});
-      history.changeHistory({model:modeModel, modelState: {mode:'basic'}});
-      expect(location.hash).toEqual('#!mode=basic');
-      
     });
     
-  	it("changeHistory (from model change):",function() {
-      location.hash = $.param({mode:"advanced"});
-      history.changeHistory({model:modeModel, modelState: {mode:'basic'}});
-      expect(location.hash).toEqual('#!mode=basic');  
-  	});
+    xit("trigger a 'state:mode' event sets the model" +
+       "following the fake mode object created in historyPrototype",function() {
+      spy = spyOn(modeModel, 'set').and.callThrough();
+      $(window).trigger( "hashchange" );
+      expect(spy).toHaveBeenCalled();
+      expect(spy).toHaveBeenCalledWith({mode: 'advanced'});
+    });
+    
+    xit("set the model and triggers an addEventType:change event",function() {
+      spy = spyOn(modeModel, 'triggerEvent');
+      $(window).trigger( "hashchange" );
+      expect(spy).toHaveBeenCalledWith("addEventType:change", {model: modeModel});
+    });
 
-    it("setModelState from (location/history) change:",function() {
-      //location.hash = $.param({mode:"advanced"});
+    it("set the model and triggers a change:mode event", function() {
+      var view = Object.create(ModeView);
+      spy = spyOn(modeModel, 'triggerEvent').and.callThrough();
+      $(window).trigger( "hashchange" );
+      //expect(spy).toHaveBeenCalledWith('change:mode', {model:modeModel, modelState: {mode:'mode'}});
+    });
+    it("setHistory (from model change):",function() {
+      uriAnchor.setAnchor({mode:"advanced"});
+      var stateObj = {
+            modelName  : 'tool',
+            serializedForm: "someSerialization",
+            currentSelection: "someCurrentSelection"
+          },
+          toolModel = Object.create(ToolModel);
 
-      var tmpUrlString = location.hash.slice(1),
-      tmpUrlObject = history.objectify(tmpUrlString);
-      expect(modeModel.get('mode')).toEqual('basic');
-      history.setModelState(tmpUrlObject);
-      expect(modeModel.get('mode')).toEqual('advanced');
+      toolModel.initialize(stateObj);
+      history.setHistory({model:toolModel});
+
+      expect(location.hash).toEqual('#!mode=advanced&modelName=tool&serializedForm=someSerialization&currentSelection=someCurrentSelection');
+    });
+    
+    it("changeHistory (from model change):",function() {
+      uriAnchor.setAnchor({mode:"advanced"});
+      var stateObj = {
+            modelName  : 'tool',
+            serializedForm: "someSerialization",
+            currentSelection: "someCurrentSelection"
+          },
+          toolModel = Object.create(ToolModel);
+
+      toolModel.initialize(stateObj);
+      history.changeHistory({model:toolModel});
+
+      expect(location.hash).toEqual('#!mode=advanced&modelName=tool&serializedForm=someSerialization&currentSelection=someCurrentSelection');
+    });
+
+    it("setModelState:",function(done) {
+      location.hash = '!mode=advanced&tool=Generate%20bp-level%20track%20from%20DNA%20sequence->pathName,%2Fstate%2Fhyper|toolSearch,%3Fmako%3Dgenerictool%26tool_id%3Dhb_create_dna_based';
+      var tmpUrlObj = uriAnchor.makeAnchorMap();
+      dispatcher.listenTo('history:tool', function(toolState) {
+        result2 = toolState;
+      }, history );
+      history.setModelState(tmpUrlObj);
+      
+      expect(result2).toEqual({ 
+        tool: 'Generate bp-level track from DNA sequence',
+          modelState: {
+            pathName: '/state/hyper', 
+            toolSearch: '?mako=generictool&tool_id=hb_create_dna_based' 
+          }
+        });
+      done();
     });
     it("tool model.toJSON when setting a nested object on initialization", function() {
-      var stateObj = { 
+      var stateObj2 = {
+        modelName : 'tool',
         toolName  : 'adam',
         toolState : {
           c: 'cedric',
@@ -126,13 +146,12 @@ xdescribe("A history PROTOTYPE", function() {
             e: 'espen'
           }
         }
-      }, 
-      toolModel = Object.create(ToolModel);
-
-      toolModel.initialize(stateObj);
-      expect(toolModel.toJSON()).toEqual(stateObj);
+      },
+      toolModel2 = Object.create(ToolModel);
+      toolModel2.initialize(stateObj2);
+      expect(toolModel2.toJSON()).toEqual(stateObj2);
     });
-    it("set location.hash with nested objects", function() {
+    xit("set location.hash with nested objects", function() {
       var stateObj = { 
         tool      : 'adam',
         toolState : {
@@ -177,21 +196,17 @@ describe("Navigation tests", function() {
         expect('click').toHaveBeenTriggeredOn('.clickTest');
         expect(eventSpy).toHaveBeenTriggered();
       });
-      it("the model changed", function() {
+      xit("the model changed", function() {
         spy = spyOn(modeModel, 'set').and.callThrough();
         $('.clickTest').trigger( "click" );
         expect(spy).toHaveBeenCalled();
         result = modeModel.get('mode');
         expect(result).toEqual('advanced');
       });
-      it("A change event reaches changeHistory method", function() {
-        spy = spyOn(history, 'changeHistory');
+      it("Change history:", function() {
+
         
-        history.start({initState: { mode: 'basic' }});
-        expect(spy.calls.count()).toEqual(0);
-        $('.clickTest').trigger( "click" );
-        expect(spy).toHaveBeenCalled();
-        expect(spy.calls.count()).toEqual(1);
+
       });
       it("Starting the history does not trigger a history:change (no loop)", function() {
         spy = spyOn(history, 'changeHistory');

@@ -15,8 +15,10 @@
     it("provides the methods of the BASE prototype controller", function() {
         var modeCTRL = Object.create(ModeCTRL);
             expect( _.isFunction(modeCTRL.initialize) ).toBe(true);
-            expect( _.isFunction(modeCTRL.toggleMode) ).toBe(true);
-            //expect( _.isFunction(modeCTRL.toJSON) ).toBe(true);
+            expect( _.isFunction(modeCTRL.toggleLeftPanel) ).toBe(true);
+            expect( _.isFunction(modeCTRL.parseEvent) ).toBe(true);
+            expect( _.isFunction(modeCTRL.updateMode) ).toBe(true);
+            
             modeCTRL = null;
     });
      

@@ -8,16 +8,13 @@
 		var History = (function() {
 		// Private variables
 		var triggerHashchange = true,
+			legalModels = ['mode', 'tool'],
 		// Private methods 
 		_hashChangeHandler = function(event) {
 			var tmpUrlObject = uriAnchor.makeAnchorMap(); 
 			if(triggerHashchange) {
 				event.data.self.triggerEvent('history:change', tmpUrlObject);
-			} else {
-				setTimeout(function() {
-					triggerHashchange = true;
-				}, 500);
-			}
+			} 
 		},
 		_pushStateHandler = function(event) {
 			console.log("History pushState eventType");
@@ -29,7 +26,6 @@
 				options = options || {};
 				
 				if(options.pushState !== undefined) {
-					// Passing this to the _hasChangeHandler. Write up about why!
 					$(window).on('pushState', {self: this}, this.pushStateHandler);
 				} else {
 					$(window).on('hashchange', {self: this}, this.hashChangeHandler);
@@ -69,7 +65,7 @@
 			},
 			setModelState: function(locationObj) {
 				// Invariant: All states found in the location hash object is already in the storedStateObject
-				var tmpModel = {}, dependentObj;
+				var tmpModel, dependentObj;
 				for(var prop in locationObj) {
 					tmpModel = {}; 
 					if(locationObj.hasOwnProperty(prop)) {
@@ -77,7 +73,7 @@
 							dependentObj = ('_' + prop);
 							tmpModel[prop] = locationObj[prop];
 							if(locationObj[dependentObj]) {
-								tmpModel[dependentObj] = locationObj[dependentObj];
+								tmpModel["modelState"] = locationObj[dependentObj];
 							}
 							this.triggerEvent('history:' + prop, tmpModel);
 						} 
@@ -87,31 +83,39 @@
 			setHistory: function(modelObj) {
 				var locationObj   = uriAnchor.makeAnchorMap(),
 						tmpModelState = modelObj.modelState ;
-						if(typeof tmpModelState !== 'string') {
-							for(var prop in tmpModelState) {
-								if( _.has(tmpModelState, prop)) {
-									locationObj[prop] = tmpModelState[prop];
-									storage.set(prop, tmpModelState[prop]);
-								}
+						//if(typeof tmpModelState !== 'string') {
+						for(var prop in tmpModelState) {
+							if( tmpModelState.hasOwnProperty(prop) && _.has(tmpModelState, prop)) {
+								locationObj[prop] = tmpModelState[prop];
+								storage.set(prop, tmpModelState[prop]);
 							}
-						} else {
-							locationObj[prop] = tmpModelState[prop];
-							storage.set(prop, tmpModelState[prop]);
 						}
+						//} //else {
+						//	locationObj[prop] = tmpModelState[prop];
+						//	storage.set(prop, tmpModelState[prop]);
+						//}
 						triggerHashchange = false;
 						uriAnchor.setAnchor(locationObj, {}, true);
 			},
 			changeHistory: function(modelObj) {
-				var state, locationObj   = uriAnchor.makeAnchorMap() ;
-						if ( (modelObj['modelState'] !== undefined)) {
+				// get stored object
+				// check if stored and new prop differ
+				// if equal skip
+				// only trigger changes for legalModels
+				console.log("History: Change history: modelObj");
+				console.log(modelObj.modelState);
+				var state, locationObj = uriAnchor.makeAnchorMap();
+						//if ( (modelObj['modelState'] !== undefined)) {
 							state = modelObj.modelState;
 							for(var prop in state) {
-								locationObj[prop] = state[prop];
-								storage.set(prop, state[prop]);
+								if(state.hasOwnProperty(prop)) {
+									locationObj[prop] = state[prop];
+									storage.set(prop, state[prop]);
+								}
 							}
 							triggerHashchange = false;
 							uriAnchor.setAnchor(locationObj, {}, true);
-						} 
+						//}
 			},
 			getStoredStateObject: function() {
 				var i, j, store = storage.index(), tmpStorageObj = {};

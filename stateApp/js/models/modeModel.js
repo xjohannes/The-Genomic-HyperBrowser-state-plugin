@@ -6,13 +6,11 @@
 	var ModeModel = Object.create(BaseModel);
 
 	_.extend(ModeModel, function() {
-		var sharedModeModelState = {}, triggerState = 'history';
+		var modelName = "mode", triggerState = 'history';
 		return {
 			initialize: function(modelState) {
 				this.eventSetup();
-				if(modelState) {
-					this.init(modelState);
-				}
+				this.init(modelState, modelName);
 			},
 			eventSetup: function() {
 				this.listenTo('history:mode', this.toggleMode, this);
@@ -21,9 +19,8 @@
 			},
 			toggleMode: function(state) {
 				var tmpMode;
-				tmpMode = this.get('mode');
-			
 				if(state === undefined) {
+					tmpMode = this.get('mode');
 					triggerState = 'history';
 			 		// Should I implement the strategy design pattern here, just to get some more meat?
 			 		// It can be linked to state, but it isn't important to make the code easier to read 
@@ -45,12 +42,12 @@
 			},
 			addSetMode: function(args) {
 				if(args.model === this) {
-					this.triggerEvent('set:' + triggerState, {model:this, modelState:this.toJSON()});
+					this.triggerEvent('set:' + triggerState, this);
 				}
 			},
 			addChangeMode: function(args) {
 				if(args.model === this) {
-					this.triggerEvent('change:' + triggerState, {model:this, modelState:this.toJSON()});
+					this.triggerEvent('change:' + triggerState, this);
 				}	
 			}
 		}

@@ -1,6 +1,5 @@
 (function() {
 'use strict';
-//var a = require('path');
 var _ 			   = require('underscore'),
 		Dispatcher = require('./dispatcherPrototype');
 
