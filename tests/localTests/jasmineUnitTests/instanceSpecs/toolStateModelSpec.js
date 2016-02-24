@@ -80,43 +80,6 @@ describe("A ToolStateModel class / constructor", function() {
             toolStateModel.setToolState({toolState: serializedForm});
             expect( toolStateModel.get('toolState') ).toEqual(serializedForm);
         });
-    xit("sets location/history when setting toolState", function() {
-            spy = spyOn(history, 'changeHistory').and.callThrough();
-            history.start({initState: { mode: 'basic' }}); 
-            
-            toolStateModel.setToolState(secondState);
-            
-            expect(toolStateModel.get('tool')).toEqual('Analyze genomic tracks');
-            //console.log('toolStateModel');
-            //console.log(toolStateModel.get('toolState'));
-            expect(toolStateModel.get('toolState')['currentSelection']).toEqual(currentSelection);
-            expect( spy ).toHaveBeenCalled();
-            //expect( spy ).toHaveBeenCalledWith({
-            //    model: toolStateModel,
-            //    modelState: {
-            //        tool: toolStateModel.get('tool'),
-            //        _tool: {
-            //            toolSearch       : 'https://hyperbrowser.uio.no/',
-            //            pathName         : '/state/hyper',
-            //            currentSelection : 'hyper?#dbkey',
-            //            serializedForm   : 'dbkey=tair10'
-            //        }
-            //    }
-            //});
-           
-            expect(location.hash.slice(2)).toEqual(uriAnchor.makeAnchorString({
-                mode  :'basic',
-                tool  : 'Analyze genomic tracks',
-                _tool : {
-                    pathName         : '/state/hyper',
-                    toolSearch       : 'https://hyperbrowser.uio.no/',
-                    currentSelection : 'hyper?#dbkey',
-                    serializedForm   : 'dbkey=tair10'
-                }
-            }));
-            
-        });
-    
 });
 
 

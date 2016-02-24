@@ -21,8 +21,6 @@
 						hasProp = _.has(this.modelState, prop);
 						if (typeof newAttributes[prop] === 'string') {
 							tmp = newAttributes[prop];
-                            console.log("ModelPrototype: this.modelState");
-                            console.log(this.modelState);
 							this.modelState[prop] = tmp;
 						} else {
 							if (this.modelState[prop] === undefined) {

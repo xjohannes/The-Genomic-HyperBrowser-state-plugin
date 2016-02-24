@@ -11181,16 +11181,16 @@ return jQuery;
 			this.listenTo('change:mode', this.parseEvent, this); 
 			this.listenTo('change:history', this.parseEvent, this); 
 		},
-		parseEvent: function(model) {
+		parseEvent: function(modelObj) {
 			this.toggleLeftPanel();
-			if(model === this.model) {
-				this.updateMode(event);
+			if(modelObj === this.model) {
+				this.updateMode(modelObj);
 			}
 		},
-		toggleLeftPanel: function(event) {
-			(this.get('mode') === "basic" ? window.force_left_panel('hide') : window.force_left_panel('show'));
+		toggleLeftPanel: function() {
+			(this.model.get('mode') === "basic" ? window.force_left_panel('hide') : window.force_left_panel('show'));
 		},
-		updateMode: function(model) {
+		updateMode: function(modelObj) {
 			this.mainFrame = $(config.mainFrame);
 			
 			var tabValue, currentMode, 
@@ -11203,7 +11203,7 @@ return jQuery;
 
 			// Mode change triggered from within a gsuite tool (mainDocument/mainIFrame) 
 			if(isBasic.length >= 1) {
-				currentMode = model.get('mode');
+				currentMode = modelObj.get('mode');
 				var serializedForm, form;
 				if(currentMode === 'basic' ) {
     				isBasic.prop('checked', 'checked');
@@ -11218,7 +11218,7 @@ return jQuery;
 				basicTab = this.mainDocument.find(config.basicTab);
 				advancedTab = this.mainDocument.find(config.advancedTab);
 				if(analysisTab.length >= 1) {
-					currentMode  = model.get('mode');
+					currentMode  = modelObj.get('mode');
 					(currentMode === 'basic'? tabValue = config.tab2: tabValue = config.tab3);
 					
 					var currentTab = this.mainDocument.find(config.tabs + tabValue);
@@ -11251,7 +11251,7 @@ return jQuery;
             this.listenTo('set:tool', this.parseEvent, this);
         },
         parseEvent: function (eventObj) {
-            if (eventObj.get(serializedForm) !== undefined) {
+            if (eventObj.get("serializedForm") !== undefined) {
                 this.createAjaxCall(eventObj);
             }
         },
@@ -11269,7 +11269,6 @@ return jQuery;
                     self.triggerEvent('ajaxCall');
                 },
                 success: function (data) {
-                    console.log("AJAX was sent successfully");
                     self.triggerEvent('change:tool', {model: this, data: data});
                 },
                 error: function (XMLHttpRequest, textStatus, errorThrown) {
@@ -11437,7 +11436,6 @@ module.exports = modeApp;
 				// all model changes from history will use a fresh model, thus setting not changing state
 				this.eraseAllModels();
 				triggerState = 'tool';
-
 				this.set(state);
 			},
 			addSetTool: function(args) {
@@ -11449,20 +11447,7 @@ module.exports = modeApp;
 				if(args.model === this) {
 					this.triggerEvent('change:' + triggerState, this);
 				}	
-			}/*,
-			historify: function() {
-				var toolState = this.get('toolState'), 
-						historyfiedToolstate = {tool: this.get('tool')};
-				if(toolState !== undefined) {
-					historyfiedToolstate['_tool'] = {};
-					for(var prop in toolState) {
-						if(toolState.hasOwnProperty(prop)) {
-							historyfiedToolstate['_tool'][prop] = toolState[prop];
-						}
-					}
-				}
-				return historyfiedToolstate;
-			}*/
+			}
 		}
  	}());
 
@@ -12206,32 +12191,15 @@ module.exports = Controller;
                     if (locationObj.hasOwnProperty(prop)) {
                         if ((prop.charAt(0) !== '_')) {
                             dependentObj = ('_' + prop);
-                            tmpModel[prop] = locationObj[prop];
                             if (locationObj[dependentObj]) {
-                                tmpModel['modelState'] = locationObj[dependentObj];
+                                tmpModel = locationObj[dependentObj];
                             }
+                            tmpModel[prop] = locationObj[prop];
                             this.triggerEvent('history:' + prop, tmpModel);
                         }
                     }
                 }
-            }/*,
-            setHistory: function (modelObj) {
-                var locationObj = uriAnchor.makeAnchorMap(),
-                    tmpModelState = modelObj.modelState;
-                if (typeof tmpModelState !== 'string') {
-                    for (var prop in tmpModelState) {
-                        if (tmpModelState.hasOwnProperty(prop) && _.has(tmpModelState, prop)) {
-                            locationObj[prop] = tmpModelState[prop];
-                            storage.set(prop, tmpModelState[prop]);
-                        }
-                    }
-                } else {
-                    locationObj[prop] = tmpModelState[prop];
-                    storage.set(prop, tmpModelState[prop]);
-                }
-                triggerHashchange = false;
-                uriAnchor.setAnchor(locationObj, {}, true);
-            }*/,
+            },
             changeHistory: function (modelObj) {
                 var modelName = modelObj.get('modelName'), modelState = modelObj.toJSON(),
                     locationObj = uriAnchor.makeAnchorMap();
@@ -12282,8 +12250,6 @@ module.exports = Controller;
 						hasProp = _.has(this.modelState, prop);
 						if (typeof newAttributes[prop] === 'string') {
 							tmp = newAttributes[prop];
-                            console.log("ModelPrototype: this.modelState");
-                            console.log(this.modelState);
 							this.modelState[prop] = tmp;
 						} else {
 							if (this.modelState[prop] === undefined) {
@@ -12417,7 +12383,7 @@ module.exports = Controller;
 			tab1					: '#tab1',
 			tab2					: '#tab2',
 			tab3					: '#tab3',
-            basic 						: '#basic',
+            basic 					: '#basic',
 			advanced  				: '#advanced',
 			background  			: '#background',
 			urlHyperPostfix         : 'hyper',
@@ -12427,113 +12393,113 @@ module.exports = Controller;
 	module.exports = stateAppConfig;
 }());
 },{}],19:[function(require,module,exports){
- (function() {
-	'use strict';
-	var Controller = require('./controllers/toolCTRL'),
-			ToolModel  = require('./models/toolModel'),
-			ToolView   = require('./views/toolView'),
-			uriAnchor  = require('./polyfills/uriAnchor_mod'),
-			config     = require('./stateAppConfig');
-		
-	var toolApp = (function() {
-		var toolCTRL, toolModel, toolView, parentFrame,
-				toolsFrame, mainFrame, mainContent, mainDocument, toolState, 
-				currentMode, isBasic, analysisTab,
-				
-				_setUpMainFrame = function(modeModel) {
-					mainFrame.on('load', function(e) {
-						mainContent = $($('#galaxy_main')[0]).contents();
-						mainDocument = mainContent.filter(function() {
-	      			return this.nodeType === 9;
-	    			});
-	    			mainDocument.ready(function() {
-	    				$(config.gsuitebox, mainContent ).on('click', function(e) {
-								toolState = {
-									tool: e.currentTarget.text
-								};
-								toolModel.eraseAllModels();
-								toolModel.setToolState(toolState);
-							});
-	    				_setUpGsuiteTabs(modeModel);
-	    				
-	    				var formSelects = mainContent.find('form select');
-							var form =  mainContent.find('form'),
-											serializedForm = form.serialize();
-							if(form.length > 0) {
-								toolModel.setToolState({
-									serializedForm: serializedForm,
-									currentSelection: e.currentTarget.name
-								});
-							} else if( uriAnchor.makeAnchorMap().mode === undefined ) {
-								// To account for situations where mode is not set in url
-								modeModel.toggleMode({mode: modeModel.get('mode'), triggerState: 'history'});
-							} 
-	    			});
-					});
-				},
-				_setUpToolFrame = function (modeModel) {
-					////////////// Setting up the toolFrame ///////////////
-				toolsFrame.on('load', function(e) {
-					var toolsContent = $($(config.toolFrame)[0]).contents(),
-							toolsDocument = toolsContent.filter(function() {
-		      			return this.nodeType === 9;
-		    			});
+(function () {
+    'use strict';
+    var Controller = require('./controllers/toolCTRL'),
+        ToolModel = require('./models/toolModel'),
+        ToolView = require('./views/toolView'),
+        uriAnchor = require('./polyfills/uriAnchor_mod'),
+        config = require('./stateAppConfig');
 
-						$(config.toolLinks, toolsContent ).on('click', function(e) {
-							toolState = {
-								tool: e.currentTarget.text
-							};
-							toolModel.eraseAllModels();
-							toolModel.setToolState(toolState);
-						});
-					});
-				},
-				_setUpGsuiteTabs = function(modeModel) {
-					var mode, anchorMap, tabValue, basicTab,
-							advancedTab;
-					isBasic = mainDocument.find(config.isBasic);
-					analysisTab = mainDocument.find(config.analysisTab);
-					// Decides if the main g-suite tabs exist in main iFrame
-					if(analysisTab.length >= 1) {
-						basicTab = mainDocument.find(config.basicTab);
-						advancedTab = mainDocument.find(config.advancedTab);
-						basicTab.on('click', function() {
-							modeModel.toggleMode({mode: 'basic', triggerState: 'history'});
-						});
-						advancedTab.on('click', function() {
-							modeModel.toggleMode({mode: 'advanced', triggerState: 'history'});
-						});
-					} 
-					// Decides if the tool provides both basic and advanced view, ie is a g-suite tool
-					if(isBasic.length >= 1) {
-						isBasic.parent().hide();
-					} 			
-				};
+    var toolApp = (function () {
+        var toolCTRL, toolModel, toolView, parentFrame,
+            toolsFrame, mainFrame, mainContent, mainDocument, toolState,
+            currentMode, isBasic, analysisTab,
 
-		return {
-			start: function(modeModel) {
-				toolCTRL    = Object.create(Controller);
-				toolModel   = Object.create(ToolModel);
-				toolView    = Object.create(ToolView);
-				
-				parentFrame = $(config.parentFrame);
-				toolsFrame  = $(config.toolFrame);
-				mainFrame   = $(config.mainFrame);
-				
-				toolCTRL.init({model: toolModel});
-				toolModel.initialize();
-				toolView.init({
-							model     : toolModel,
-							tagName   : mainFrame
-						});
-					
-				_setUpMainFrame(modeModel);
-				_setUpToolFrame(modeModel);
-			}
- 		}
- 		
-	}());
- module.exports = toolApp;
+            _setUpMainFrame = function (modeModel) {
+                mainFrame.on('load', function (e) {
+                    mainContent = $($('#galaxy_main')[0]).contents();
+                    mainDocument = mainContent.filter(function () {
+                        return this.nodeType === 9;
+                    });
+                    mainDocument.ready(function () {
+                        $(config.gsuitebox, mainContent).on('click', function (e) {
+                            toolState = {
+                                tool: e.currentTarget.text
+                            };
+                            toolModel.eraseAllModels();
+                            toolModel.setToolState(toolState);
+                        });
+                        _setUpGsuiteTabs(modeModel);
+
+                        var formSelects = mainContent.find('form select');
+                        var form = mainContent.find('form'),
+                            serializedForm = form.serialize();
+                        if (form.length > 0) {
+                            toolModel.setToolState({
+                                serializedForm: serializedForm,
+                                currentSelection: e.currentTarget.name
+                            });
+                        } else if (uriAnchor.makeAnchorMap().mode === undefined) {
+                            // To account for situations where mode is not set in url
+                            modeModel.toggleMode({mode: modeModel.get('mode'), triggerState: 'history'});
+                        }
+                    });
+                });
+            },
+            _setUpToolFrame = function (modeModel) {
+                ////////////// Setting up the toolFrame ///////////////
+                toolsFrame.on('load', function (e) {
+                    var toolsContent = $($(config.toolFrame)[0]).contents(),
+                        toolsDocument = toolsContent.filter(function () {
+                            return this.nodeType === 9;
+                        });
+
+                    $(config.toolLinks, toolsContent).on('click', function (e) {
+                        toolState = {
+                            tool: e.currentTarget.text
+                        };
+                        toolModel.eraseAllModels();
+                        toolModel.setToolState(toolState);
+                    });
+                });
+            },
+            _setUpGsuiteTabs = function (modeModel) {
+                var mode, anchorMap, tabValue, basicTab,
+                    advancedTab;
+                isBasic = mainDocument.find(config.isBasic);
+                analysisTab = mainDocument.find(config.analysisTab);
+                // Decides if the main g-suite tabs exist in main iFrame
+                if (analysisTab.length >= 1) {
+                    basicTab = mainDocument.find(config.basicTab);
+                    advancedTab = mainDocument.find(config.advancedTab);
+                    basicTab.on('click', function () {
+                        modeModel.toggleMode({mode: 'basic', triggerState: 'history'});
+                    });
+                    advancedTab.on('click', function () {
+                        modeModel.toggleMode({mode: 'advanced', triggerState: 'history'});
+                    });
+                }
+                // Decides if the tool provides both basic and advanced view, ie is a g-suite tool
+                if (isBasic.length >= 1) {
+                    isBasic.parent().hide();
+                }
+            };
+
+        return {
+            start: function (modeModel) {
+                toolCTRL = Object.create(Controller);
+                toolModel = Object.create(ToolModel);
+                toolView = Object.create(ToolView);
+
+                parentFrame = $(config.parentFrame);
+                toolsFrame = $(config.toolFrame);
+                mainFrame = $(config.mainFrame);
+
+                toolCTRL.init({model: toolModel});
+                toolModel.initialize();
+                toolView.init({
+                    model: toolModel,
+                    tagName: mainFrame
+                });
+
+                _setUpMainFrame(modeModel);
+                _setUpToolFrame(modeModel);
+            }
+        }
+
+    }());
+    module.exports = toolApp;
 }());
 
 },{"./controllers/toolCTRL":7,"./models/toolModel":10,"./polyfills/uriAnchor_mod":12,"./stateAppConfig":18,"./views/toolView":21}],20:[function(require,module,exports){

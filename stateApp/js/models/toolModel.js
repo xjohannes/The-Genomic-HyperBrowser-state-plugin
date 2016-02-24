@@ -28,7 +28,6 @@
 				// all model changes from history will use a fresh model, thus setting not changing state
 				this.eraseAllModels();
 				triggerState = 'tool';
-
 				this.set(state);
 			},
 			addSetTool: function(args) {
@@ -40,20 +39,7 @@
 				if(args.model === this) {
 					this.triggerEvent('change:' + triggerState, this);
 				}	
-			}/*,
-			historify: function() {
-				var toolState = this.get('toolState'), 
-						historyfiedToolstate = {tool: this.get('tool')};
-				if(toolState !== undefined) {
-					historyfiedToolstate['_tool'] = {};
-					for(var prop in toolState) {
-						if(toolState.hasOwnProperty(prop)) {
-							historyfiedToolstate['_tool'][prop] = toolState[prop];
-						}
-					}
-				}
-				return historyfiedToolstate;
-			}*/
+			}
 		}
  	}());
 

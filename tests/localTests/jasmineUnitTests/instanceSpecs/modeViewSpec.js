@@ -36,7 +36,6 @@ describe("A modeView Prototype ", function() {
         dispatcher   = Object.create(Dispatcher);
         modeModel    = Object.create(ModeModel);
         modeViewInst = Object.create(ModeView);
-        //console.log(modeModel);
 
         modeModel.initialize({mode:'basic'});
         modeViewInst.init({model:modeModel, classNames: "clickTest"}); 
@@ -148,39 +147,8 @@ describe("A modeView Prototype ", function() {
                 expect('click').toHaveBeenTriggeredOn('.clickTest');
                 expect(eventSpy).toHaveBeenTriggered();
             });
-            xit("can listen to events on its model", function() {
-                spy = spyOn(modeViewInst.model, 'toggleMode').and.callThrough();
-                expect(modeModel.get('mode')).toEqual('basic');
-                expect(modeViewInst.el.outerHTML).toEqual('<div class="clickTest">'
-                    + '<a target="_self" href="">Advanced</a>'
-                    + '</div>');
-                $('.clickTest').trigger( "click" );
 
-                expect(spy).toHaveBeenCalled();
-                expect(modeModel.get('mode')).toEqual('advanced');
-                // Reminder: When the model is advanced the button should display basic
-                expect(modeViewInst.el.outerHTML).toEqual('<div class="clickTest">'
-                    + '<a target="_self" href="">Basic</a>'
-                    + '</div>');
-                modeViewInst.stopListening('change');
-            });
             describe("Following a click:", function() {
-                xit("calls modeModel.toggleMode", function() {
-                    spy = spyOn(modeModel, 'toggleMode').and.callThrough();
-                    expect(spy.calls.count()).toEqual(0);
-                    $('.clickTest').trigger( "click" );
-                    expect(spy.calls.count()).toEqual(1);
-                });
-                xit("calls history.setHistory", function() {
-                    console.log('location.hash');
-                    console.log(location.hash);
-                    spy = spyOn(history, 'changeHistory').and.callThrough();
-                    expect(spy.calls.count()).toEqual(0);
-                    history.start({initState: { mode: 'basic' }});
-                    expect(spy.calls.count()).toEqual(0);
-                    $('.clickTest').trigger( "click" );
-                    expect(spy.calls.count()).toEqual(1);
-                });
                 it("does not trigger a new hashchange event", function() {
                     //var history = Object.create(History);
                     spy = spyOn(history, 'hashChangeHandler').and.callThrough();

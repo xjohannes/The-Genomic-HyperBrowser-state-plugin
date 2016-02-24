@@ -13,24 +13,6 @@ describe("A Controller PROTOTYPE", function() {
             //expect( _.isFunction(baseCTRL.toJSON) ).toBe(true);
             baseCTRL = null;
     });
-    /*
-    describe("On a controller PROTOTYPE instance one can", function() {
-    
-        ////////////// Initializing /////////////
-        var baseCTRL, spy, result;
-
-        beforeEach(function() {
-            baseCTRL = Object.create(Controller);
-            baseCTRL.init();
-        });
-        afterEach(function() {
-            baseCTRL   = null;
-            spy    = null;
-            result = null;
-        });
-        ////////////// End initializing ///////////// 
-    });
-*/
 });
 
 

@@ -10,16 +10,16 @@
 			this.listenTo('change:mode', this.parseEvent, this); 
 			this.listenTo('change:history', this.parseEvent, this); 
 		},
-		parseEvent: function(model) {
+		parseEvent: function(modelObj) {
 			this.toggleLeftPanel();
-			if(model === this.model) {
-				this.updateMode(event);
+			if(modelObj === this.model) {
+				this.updateMode(modelObj);
 			}
 		},
-		toggleLeftPanel: function(event) {
-			(this.get('mode') === "basic" ? window.force_left_panel('hide') : window.force_left_panel('show'));
+		toggleLeftPanel: function() {
+			(this.model.get('mode') === "basic" ? window.force_left_panel('hide') : window.force_left_panel('show'));
 		},
-		updateMode: function(model) {
+		updateMode: function(modelObj) {
 			this.mainFrame = $(config.mainFrame);
 			
 			var tabValue, currentMode, 
@@ -32,7 +32,7 @@
 
 			// Mode change triggered from within a gsuite tool (mainDocument/mainIFrame) 
 			if(isBasic.length >= 1) {
-				currentMode = model.get('mode');
+				currentMode = modelObj.get('mode');
 				var serializedForm, form;
 				if(currentMode === 'basic' ) {
     				isBasic.prop('checked', 'checked');
@@ -47,7 +47,7 @@
 				basicTab = this.mainDocument.find(config.basicTab);
 				advancedTab = this.mainDocument.find(config.advancedTab);
 				if(analysisTab.length >= 1) {
-					currentMode  = model.get('mode');
+					currentMode  = modelObj.get('mode');
 					(currentMode === 'basic'? tabValue = config.tab2: tabValue = config.tab3);
 					
 					var currentTab = this.mainDocument.find(config.tabs + tabValue);

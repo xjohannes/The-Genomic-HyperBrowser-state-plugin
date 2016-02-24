@@ -9,12 +9,8 @@ describe("A modeModel class / constructor", function() {
             mode.initialize({construct:'construction text'});
         });
         afterEach(function() {
-            console.log('before stopListening');
-            console.log(mode.getSubscribers());
             mode.stopListening();
-            console.log('after stopListening');
-            console.log(mode.getSubscribers());
-            
+
             mode = null;
         });
         ////////////// End initializing /////////////

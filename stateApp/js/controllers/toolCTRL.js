@@ -11,7 +11,7 @@
             this.listenTo('set:tool', this.parseEvent, this);
         },
         parseEvent: function (eventObj) {
-            if (eventObj.get(serializedForm) !== undefined) {
+            if (eventObj.get("serializedForm") !== undefined) {
                 this.createAjaxCall(eventObj);
             }
         },
@@ -29,7 +29,6 @@
                     self.triggerEvent('ajaxCall');
                 },
                 success: function (data) {
-                    console.log("AJAX was sent successfully");
                     self.triggerEvent('change:tool', {model: this, data: data});
                 },
                 error: function (XMLHttpRequest, textStatus, errorThrown) {

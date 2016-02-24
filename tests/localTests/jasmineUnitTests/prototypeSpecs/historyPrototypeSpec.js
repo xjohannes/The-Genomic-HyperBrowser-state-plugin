@@ -81,12 +81,6 @@ describe("A history PROTOTYPE", function () {
             $(window).trigger("hashchange");
             //expect(spy).toHaveBeenCalledWith('change:mode', {model:modeModel, modelState: {mode:'mode'}});
         });
-        xit("setHistory (from model change):", function () {
-            //location.hash = $.param({mode:"advanced"});
-            history.changeHistory({model: modeModel, modelState: {mode: 'basic'}});
-            expect(location.hash).toEqual('#!mode=basic');
-
-        });
 
         it("changeHistory (from model change):", function () {
             uriAnchor.setAnchor({mode: "advanced"});
@@ -118,10 +112,8 @@ describe("A history PROTOTYPE", function () {
 
             expect(result2).toEqual({
                 tool: 'Generate bp-level track from DNA sequence',
-                modelState: {
-                    pathName: '/state/hyper',
-                    toolSearch: '?mako=generictool&tool_id=hb_create_dna_based'
-                }
+                pathName: '/state/hyper',
+                toolSearch: '?mako=generictool&tool_id=hb_create_dna_based'
             });
             done();
         });

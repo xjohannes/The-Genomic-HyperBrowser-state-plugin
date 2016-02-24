@@ -30,15 +30,6 @@ describe("A Model PROTOTYPE", function() {
         expect(Model).not.toBeUndefined();
     });
 
-    xit("provides the get and set methods", function() {
-            var model = Model;
-            expect( _.isFunction(model.set) ).toBe(true);
-            expect( _.isFunction(model.get) ).toBe(true);
-            expect( _.isFunction(model.toJSON) ).toBe(true);
-            // model is a
-            expect( _.isFunction(model.listenTo) ).toBe(true);
-            model = null;
-    });
     it("is a dispatcher", function() {
             var model = Model;
             expect( _.isFunction(model.listenTo) ).toBe(true);
@@ -108,12 +99,6 @@ describe("A Model PROTOTYPE", function() {
                 expect( spy ).toHaveBeenCalledWith('addEventType:set', {model:model});
                 model.set({model:'advanced'});
                 expect( spy ).toHaveBeenCalledWith('addEventType:change', {model:model});
-            });
-
-            xit("all models escape HTML characters when set", function() {
-                model.set({escape : '<script>evil();&</script>'});
-                result = model.get('escape');
-                expect(result).toEqual('&lt;script&gt;evil();&amp;&lt;/script&gt;');
             });
 
         });

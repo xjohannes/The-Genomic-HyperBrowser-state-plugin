@@ -70,32 +70,15 @@
                     if (locationObj.hasOwnProperty(prop)) {
                         if ((prop.charAt(0) !== '_')) {
                             dependentObj = ('_' + prop);
-                            tmpModel[prop] = locationObj[prop];
                             if (locationObj[dependentObj]) {
-                                tmpModel['modelState'] = locationObj[dependentObj];
+                                tmpModel = locationObj[dependentObj];
                             }
+                            tmpModel[prop] = locationObj[prop];
                             this.triggerEvent('history:' + prop, tmpModel);
                         }
                     }
                 }
-            }/*,
-            setHistory: function (modelObj) {
-                var locationObj = uriAnchor.makeAnchorMap(),
-                    tmpModelState = modelObj.modelState;
-                if (typeof tmpModelState !== 'string') {
-                    for (var prop in tmpModelState) {
-                        if (tmpModelState.hasOwnProperty(prop) && _.has(tmpModelState, prop)) {
-                            locationObj[prop] = tmpModelState[prop];
-                            storage.set(prop, tmpModelState[prop]);
-                        }
-                    }
-                } else {
-                    locationObj[prop] = tmpModelState[prop];
-                    storage.set(prop, tmpModelState[prop]);
-                }
-                triggerHashchange = false;
-                uriAnchor.setAnchor(locationObj, {}, true);
-            }*/,
+            },
             changeHistory: function (modelObj) {
                 var modelName = modelObj.get('modelName'), modelState = modelObj.toJSON(),
                     locationObj = uriAnchor.makeAnchorMap();

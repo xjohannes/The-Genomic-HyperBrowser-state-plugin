@@ -21,7 +21,7 @@
 			tab1					: '#tab1',
 			tab2					: '#tab2',
 			tab3					: '#tab3',
-            basic 						: '#basic',
+            basic 					: '#basic',
 			advanced  				: '#advanced',
 			background  			: '#background',
 			urlHyperPostfix         : 'hyper',
