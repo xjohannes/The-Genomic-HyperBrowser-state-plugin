@@ -4,10 +4,10 @@ var History    = require('../../../../stateApp/js/prototypes/historyPrototype.js
     ModeModel  = require('../../../../stateApp/js/models/modeModel.js'),
     ToolModel  = require('../../../../stateApp/js/models/toolModel.js'),
     ModeView       = require('../../../../stateApp/js/views/modeView.js'),
-    uriAnchor  = require('urianchor');
+    uriAnchor  = require('../../../../stateApp/js/polyfills/uriAnchor_mod');
 
 describe("A history PROTOTYPE", function() {
-  var history, eventSpy, spy, subs, dispatcher, result2;
+  var history, eventSpy, spy, subs, dispatcher, modelDispatcher, result2;
   
   it("is defined", function() {
       expect(History).not.toBeUndefined();
@@ -15,16 +15,22 @@ describe("A history PROTOTYPE", function() {
   beforeEach(function() {
     storage.flush();
     location.hash = uriAnchor.setAnchor({mode:"advanced"}, {}, true);
-
+    //console.log('location.hash historySpec');
+    //console.log(location.hash);
     history = Object.create(History);
     history.start({initState: { mode: 'basic' }});
     dispatcher  = Object.create(Dispatcher);
+    //console.log(location.hash);
   });
   afterEach(function() {
     history.stop();
     history = null;
     dispatcher.stopListening();
-
+    /*
+    for(var prop in subs) {
+        dispatcher.stopListeningl(prop);
+      }
+      */
   }); 
   it("provides the start and stop methods", function() {
     expect( _.isFunction(history.start) ).toBe(true);
@@ -54,7 +60,7 @@ describe("A history PROTOTYPE", function() {
     expect(spy).toHaveBeenCalled();
     });
   describe("The hashChange event handler should", function () {
-    var modeModel, toolModel2;
+    var modeModel;
     beforeEach(function() {
       modeModel = Object.create(ModeModel);
       modeModel.initialize({mode:'basic'});
@@ -89,34 +95,17 @@ describe("A history PROTOTYPE", function() {
       $(window).trigger( "hashchange" );
       //expect(spy).toHaveBeenCalledWith('change:mode', {model:modeModel, modelState: {mode:'mode'}});
     });
-    it("setHistory (from model change):",function() {
-      uriAnchor.setAnchor({mode:"advanced"});
-      var stateObj = {
-            modelName  : 'tool',
-            serializedForm: "someSerialization",
-            currentSelection: "someCurrentSelection"
-          },
-          toolModel = Object.create(ToolModel);
-
-      toolModel.initialize(stateObj);
-      history.setHistory({model:toolModel});
-
-      expect(location.hash).toEqual('#!mode=advanced&modelName=tool&serializedForm=someSerialization&currentSelection=someCurrentSelection');
+    xit("setHistory (from model change):",function() {
+      //location.hash = $.param({mode:"advanced"});
+      history.changeHistory({model:modeModel, modelState: {mode:'basic'}});
+      expect(location.hash).toEqual('#!mode=basic');
+      
     });
     
     it("changeHistory (from model change):",function() {
-      uriAnchor.setAnchor({mode:"advanced"});
-      var stateObj = {
-            modelName  : 'tool',
-            serializedForm: "someSerialization",
-            currentSelection: "someCurrentSelection"
-          },
-          toolModel = Object.create(ToolModel);
-
-      toolModel.initialize(stateObj);
-      history.changeHistory({model:toolModel});
-
-      expect(location.hash).toEqual('#!mode=advanced&modelName=tool&serializedForm=someSerialization&currentSelection=someCurrentSelection');
+      location.hash = $.param({mode:"advanced"});
+      history.changeHistory({model:modeModel, modelState: {mode:'basic'}});
+      expect(location.hash).toEqual('#!mode=basic');  
     });
 
     it("setModelState:",function(done) {
@@ -124,12 +113,14 @@ describe("A history PROTOTYPE", function() {
       var tmpUrlObj = uriAnchor.makeAnchorMap();
       dispatcher.listenTo('history:tool', function(toolState) {
         result2 = toolState;
+        console.log('toolState:');
+        console.log(toolState);
       }, history );
       history.setModelState(tmpUrlObj);
       
       expect(result2).toEqual({ 
         tool: 'Generate bp-level track from DNA sequence',
-          modelState: {
+          _tool: { 
             pathName: '/state/hyper', 
             toolSearch: '?mako=generictool&tool_id=hb_create_dna_based' 
           }
@@ -137,8 +128,7 @@ describe("A history PROTOTYPE", function() {
       done();
     });
     it("tool model.toJSON when setting a nested object on initialization", function() {
-      var stateObj2 = {
-        modelName : 'tool',
+      var stateObj = { 
         toolName  : 'adam',
         toolState : {
           c: 'cedric',
@@ -146,10 +136,11 @@ describe("A history PROTOTYPE", function() {
             e: 'espen'
           }
         }
-      },
-      toolModel2 = Object.create(ToolModel);
-      toolModel2.initialize(stateObj2);
-      expect(toolModel2.toJSON()).toEqual(stateObj2);
+      }, 
+      toolModel = Object.create(ToolModel);
+
+      toolModel.initialize(stateObj);
+      expect(toolModel.toJSON()).toEqual(stateObj);
     });
     xit("set location.hash with nested objects", function() {
       var stateObj = { 
@@ -203,10 +194,14 @@ describe("Navigation tests", function() {
         result = modeModel.get('mode');
         expect(result).toEqual('advanced');
       });
-      it("Change history:", function() {
-
+      xit("A change event reaches changeHistory method", function() {
+        spy = spyOn(history, 'changeHistory');
         
-
+        history.start({initState: { mode: 'basic' }});
+        expect(spy.calls.count()).toEqual(0);
+        $('.clickTest').trigger( "click" );
+        expect(spy).toHaveBeenCalled();
+        expect(spy.calls.count()).toEqual(1);
       });
       it("Starting the history does not trigger a history:change (no loop)", function() {
         spy = spyOn(history, 'changeHistory');

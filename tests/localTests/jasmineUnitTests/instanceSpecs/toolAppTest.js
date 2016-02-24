@@ -4,7 +4,7 @@ var ToolStateModel = require('../../../../stateApp/js/models/toolModel.js'),
     ToolStateView  = require('../../../../stateApp/js/views/toolView.js'),
     storage        = require('simplestorage.js'),
     History        = require('../../../../stateApp/js/prototypes/historyPrototype.js'),
-    uriAnchor      = require('urianchor'),
+    uriAnchor      = require('../../../../stateApp/js/polyfills/uriAnchor_mod'),
     _              = require('underscore');
 
 describe("A ToolApp class ", function() {

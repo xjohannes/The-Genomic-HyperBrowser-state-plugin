@@ -42,9 +42,9 @@
   },
   "dependencies": {
     "jquery": "^2.1.4",
+    "simplestorage": "^1.2.2",
     "simplestorage.js": "^0.2.0",
     "spin.js": "^2.3.2",
-    "underscore": "^1.8.3",
-    "urianchor": "^1.2.2"
+    "underscore": "^1.8.3"
   }
 }

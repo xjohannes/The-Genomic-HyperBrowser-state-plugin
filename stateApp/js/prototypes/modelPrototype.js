@@ -1,19 +1,15 @@
 (function() {
 'use strict';
-	var _ 			   = require('underscore'),
-		Dispatcher = require('./dispatcherPrototype');
+	var _ 		   = require('underscore'),
+        Dispatcher = require('./dispatcherPrototype');
 	
 	var Model = (function() {
 		var tmp;
 		
 		return {
-			init: function(modelState, modelName) {
-				this.modelState = {
-					modelName : modelName
-				};
-				if(modelState) {
-					this.set(modelState);
-				}
+			init: function(attributes) {
+				this.modelState = {};
+				this.set(attributes);
 			},
 			set: function(newAttributes) {
 				if(newAttributes === null || newAttributes === undefined) { return; }
@@ -31,10 +27,8 @@
 							var innerObj = newAttributes[prop];
 
 							for (var innerProp in innerObj) {
-								if (innerObj.hasOwnProperty(innerProp)) {
-									if (this.modelState[prop][innerProp] !== innerObj[innerProp]) {
-										this.modelState[prop][innerProp] = innerObj[innerProp];
-									}
+								if (innerObj.hasOwnProperty(innerProp) && this.modelState[prop][innerProp] !== innerObj[innerProp]) {
+									this.modelState[prop][innerProp] = innerObj[innerProp];
 								}
 							}
 						}
@@ -51,11 +45,8 @@
 			get: function(key) {
 				if(this.modelState[key] !== undefined) {
 					return this.modelState[key];
-				} else if (key === "modelState") {
-					return this.modelState;
-				} else {
-					return undefined;
 				}
+				return undefined;
 			},
 			toJSON: function() {
 				return this.modelState;
@@ -65,9 +56,10 @@
 			},
 			eraseAllModels: function() {
 				for(var prop in this.modelState) {
-					if (this.modelState.hasOwnProperty(prop)) {
-						delete this.modelState[prop];
-					}
+                    if(this.modelState.hasOwnProperty(prop)) {
+                        delete this.modelState[prop];
+
+                    }
 				}
 			}
 	};

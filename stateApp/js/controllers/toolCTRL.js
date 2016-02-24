@@ -1,7 +1,8 @@
 (function(){
 	'use strict';
 	var BaseController = require('../prototypes/controllerPrototype'),
-			_    = require('underscore');
+			_    					 = require('underscore'),
+			config 				 = require('../stateAppConfig');
 
 	var ToolController = Object.create(BaseController);
 
@@ -22,7 +23,7 @@
 				currentSelection = eventObj.modelState._tool.currentSelection;
 				$.ajax({
           type:'post',
-          url: 'hyper?#' + currentSelection,
+          url: config.urlHyperPostfix + "?" + currentSelection,
           data: eventObj.modelState._tool.serializedForm,
           beforeSend: function() {
          		self.triggerEvent('ajaxCall');

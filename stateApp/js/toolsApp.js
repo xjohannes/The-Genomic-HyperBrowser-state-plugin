@@ -3,7 +3,8 @@
 	var Controller = require('./controllers/toolCTRL'),
 			ToolModel  = require('./models/toolModel'),
 			ToolView   = require('./views/toolView'),
-			uriAnchor  = require('urianchor');
+			uriAnchor  = require('./polyfills/uriAnchor_mod'),
+			config     = require('./stateAppConfig');
 		
 	var toolApp = (function() {
 		var toolCTRL, toolModel, toolView, parentFrame,
@@ -17,7 +18,7 @@
 	      			return this.nodeType === 9;
 	    			});
 	    			mainDocument.ready(function() {
-	    				$('.gsuitebox a', mainContent ).on('click', function(e) {
+	    				$(config.gsuitebox, mainContent ).on('click', function(e) {
 								toolState = {
 									tool: e.currentTarget.text
 								};
@@ -31,8 +32,10 @@
 											serializedForm = form.serialize();
 							if(form.length > 0) {
 								toolModel.setToolState({
-									serializedForm: serializedForm,
-									currentSelection: e.currentTarget.name
+									toolState: {
+										serializedForm: serializedForm, 
+										currentSelection: e.currentTarget.name
+									}
 								});
 							} else if( uriAnchor.makeAnchorMap().mode === undefined ) {
 								// To account for situations where mode is not set in url
@@ -44,12 +47,12 @@
 				_setUpToolFrame = function (modeModel) {
 					////////////// Setting up the toolFrame ///////////////
 				toolsFrame.on('load', function(e) {
-					var toolsContent = $($('#galaxy_tools')[0]).contents(),
+					var toolsContent = $($(config.toolFrame)[0]).contents(),
 							toolsDocument = toolsContent.filter(function() {
 		      			return this.nodeType === 9;
 		    			});
 
-						$('a.tool-link', toolsContent ).on('click', function(e) {
+						$(config.toolLinks, toolsContent ).on('click', function(e) {
 							toolState = {
 								tool: e.currentTarget.text
 							};
@@ -61,12 +64,12 @@
 				_setUpGsuiteTabs = function(modeModel) {
 					var mode, anchorMap, tabValue, basicTab,
 							advancedTab;
-					isBasic = mainDocument.find('#isBasic');
-					analysisTab = mainDocument.find('.tabs .tab-links li:nth-child(2)');
+					isBasic = mainDocument.find(config.isBasic);
+					analysisTab = mainDocument.find(config.analysisTab);
 					// Decides if the main g-suite tabs exist in main iFrame
 					if(analysisTab.length >= 1) {
-						basicTab = mainDocument.find('#tab-links li:nth-child(2)');
-						advancedTab = mainDocument.find('#tab-links li:nth-child(3)');
+						basicTab = mainDocument.find(config.basicTab);
+						advancedTab = mainDocument.find(config.advancedTab);
 						basicTab.on('click', function() {
 							modeModel.toggleMode({mode: 'basic', triggerState: 'history'});
 						});
@@ -82,14 +85,14 @@
 
 		return {
 			start: function(modeModel) {
-				toolCTRL = Object.create(Controller);
-				toolModel  = Object.create(ToolModel);
-				toolView   = Object.create(ToolView);
+				toolCTRL    = Object.create(Controller);
+				toolModel   = Object.create(ToolModel);
+				toolView    = Object.create(ToolView);
 				
-				parentFrame  = $('iframe');
-				toolsFrame = $('#galaxy_tools');
-				mainFrame  = $('#galaxy_main');
-
+				parentFrame = $(config.parentFrame);
+				toolsFrame  = $(config.toolFrame);
+				mainFrame   = $(config.mainFrame);
+				
 				toolCTRL.init({model: toolModel});
 				toolModel.initialize();
 				toolView.init({

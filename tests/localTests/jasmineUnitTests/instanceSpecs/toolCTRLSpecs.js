@@ -2,7 +2,7 @@
         Dispatcher = require('../../../../stateApp/js/prototypes/dispatcherPrototype.js'),
         ToolModel  = require('../../../../stateApp/js/models/toolModel.js'),
         History    = require('../../../../stateApp/js/prototypes/historyPrototype.js'),
-        uriAnchor  = require('urianchor');
+        uriAnchor  = require('../../../../stateApp/js/polyfills/uriAnchor_mod');
 
     describe("A toolCTRL prototype object", function() {
         //window.top.frames['galaxy_main'].location = {};  

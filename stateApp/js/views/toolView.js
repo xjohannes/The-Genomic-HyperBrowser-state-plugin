@@ -3,7 +3,8 @@
 	var BaseView = require('../prototypes/viewPrototype'),
 			 _    	 = require('underscore'),
 			 $    	 = require('jquery'),
-			 Spinner = require('spin.js');
+			 Spinner = require('spin.js'),
+			 config  = require('../stateAppConfig');
 
 	var ToolView = Object.create(BaseView);
 
@@ -17,7 +18,7 @@
 					this.listenTo('ajaxCall', this.disablePage, this);
 				},
 				disablePage: function() {
-					background = $('#background');
+					background = $(config.background);
 					background.css('z-index', 2);
 					spinner = new Spinner({color:'#999', lines: 10, corners:0.9}).spin();
 					background.append(spinner.el);
@@ -27,8 +28,11 @@
 					background.remove();
 				},
 				setCorrectIframeUrl: function(data) {
-					var tmp = data.split('?mako').join('hyper?mako');
-					return tmp.split("form.action = '?'").join("form.action = 'hyper?'");
+					// Prefixing host url with "hyper". Because the host url is added automatically 
+					// from the location of the running script, and this script is outside the script 
+					// that performs the ajax call
+					var tmp = data.split('?' + config.urlSourcePostfix).join(config.urlHyperPostfix +'?' + config.urlSourcePostfix);
+					return tmp.split("form.action = '?'").join("form.action = '"+ config.urlHyperPostfix + "?'");
 					 
 				},
 				render: function(event) {

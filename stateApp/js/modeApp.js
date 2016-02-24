@@ -3,34 +3,35 @@
 	var Controller = require('./controllers/modeCTRL'),
 			ModeModel  = require('./models/modeModel'),
 			ModeView   = require('./views/modeView'),
-			storage    = require('simplestorage.js');
+			storage    = require('simplestorage.js'),
+			config 		 = require('./stateAppConfig');
 
 	var modeApp = (function() {
 		return {
 			attachModeListeners: function(modeModel) {
 				var mainFrame = $('#galaxy_main'), mainContent, mainDocument;
 				// Attach basic/advanced button on main navigation
-				$('#masthead .title').on('click', function(event) {
+				$(config.hblogo).on('click', function(event) {
 					var tmpMode = storage.get('mode');
 					storage.flush();
 					storage.set('mode', tmpMode);
 				});
 				// Attach toggle mode functionality on frame border arrow
-				$('#left-border-inner').on('click', function(event) {
+				$(config.toolBorder).on('click', function(event) {
 					modeModel.toggleMode();
 				}); 
 				// Attach mode functionality to basic and advanced sections on gsuite main welcome page
 				mainFrame.on('load', function(e) {
-					mainContent  = $($('#galaxy_main')[0]).contents();
+					mainContent  = $($(config.mainFrame)[0]).contents();
 					mainDocument = mainContent.filter(function() {
 								return this.nodeType === 9;
 							});
-					var tab1 = mainContent.find('#tab1');
+					var tab1 = mainContent.find(config.tag1);
 						if(tab1.length > 0) {
-							tab1.find('#basic').on('click', function() {
+							tab1.find(config.basic).on('click', function() {
 								modeModel.toggleMode({'mode': 'basic', 'triggerState': 'history'});
 							});
-							tab1.find('#advanced').on('click', function() {
+							tab1.find(config.advanced).on('click', function() {
 								modeModel.toggleMode({'mode': 'advanced', 'triggerState': 'history'});
 							});
 						}
@@ -38,7 +39,7 @@
 			},
 			start: function() {
 				var modeCTRL = Object.create(Controller),
-				masthead   = $('#masthead tbody tr').first(),
+				masthead   = $(config.mainNav).first(),
 				modeModel  = Object.create(ModeModel),
 				modeView   = Object.create(ModeView);
 

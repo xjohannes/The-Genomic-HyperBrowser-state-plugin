@@ -1,7 +1,8 @@
 (function(){
 	'use strict';
 	var BaseController = require('../prototypes/controllerPrototype'),
-			_    = require('underscore');
+			_    = require('underscore'),
+			config = require('../stateAppConfig');
 
 	var ModeController = Object.create(BaseController);
 	_.extend(ModeController, {
@@ -19,7 +20,7 @@
 			(this.model.get('mode') === "basic" ? window.force_left_panel('hide') : window.force_left_panel('show'));
 		},
 		updateMode: function(event) { 
-			this.mainFrame = $('#galaxy_main');
+			this.mainFrame = $(config.mainFrame);
 			
 			var tabValue, currentMode, 
 					isBasic, analysisTab, basicTab, advancedTab, mode;
@@ -27,7 +28,7 @@
 				this.mainDocument = this.mainContents.filter(function() {
 						return this.nodeType === 9;
 					});
-			isBasic = this.mainDocument.find('#isBasic');
+			isBasic = this.mainDocument.find(config.isBasic);
 
 			// Mode change triggered from within a gsuite tool (mainDocument/mainIFrame) 
 			if(isBasic.length >= 1) {
@@ -42,14 +43,14 @@
 				$(isBasic).trigger("change");
 			} else {
 				// mode change triggered from Gsuite tabs
-				analysisTab = this.mainDocument.find('#tab-links');
-				basicTab = this.mainDocument.find('#tab-links li:nth-child(2)');
-				advancedTab = this.mainDocument.find('#tab-links li:nth-child(3)');
+				analysisTab = this.mainDocument.find(config.analysisTab);
+				basicTab = this.mainDocument.find(config.basicTab);
+				advancedTab = this.mainDocument.find(config.advancedTab);
 				if(analysisTab.length >= 1) {
 					currentMode  = event.model.get('mode');
-					(currentMode === 'basic'? tabValue = '#tab2': tabValue = '#tab3');
+					(currentMode === 'basic'? tabValue = config.tab2: tabValue = config.tab3);
 					
-					var currentTab = this.mainDocument.find('.tabs ' + tabValue);
+					var currentTab = this.mainDocument.find(config.tabs + tabValue);
 						currentTab.show().siblings().hide();
 						
 					if(currentMode === 'basic') {

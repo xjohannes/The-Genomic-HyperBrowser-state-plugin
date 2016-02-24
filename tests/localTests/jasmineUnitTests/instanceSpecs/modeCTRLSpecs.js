@@ -3,10 +3,8 @@
 
     describe("A modeCTRL prototype object", function() {
     window.force_left_panel = function(mode) {};
-    //window.top = {};
-    //window.top.frames = {};
-    //window.top.frames['galaxy_main'] = {};
-    //window.top.frames['galaxy_main'].location = {};
+    window.hbGetBaseUrl = function(mode) {};
+    
     
     it("is defined", function() {
         expect(ModeCTRL).not.toBeUndefined();

@@ -10,8 +10,8 @@
 						historyOptions = {initState:{ mode: 'basic'}},
 						modeModel;
 				
-				if(location.hash !== "" || location.href === (location.protocol + "//" +  location.host + extractInstance())
-					|| location.href === (location.protocol + "//" +  location.host + extractInstance() + "root")) {
+				if(location.hash !== "" || location.href === (location.protocol + "//" +  location.host + hbGetBaseUrl())
+					|| location.href === (location.protocol + "//" +  location.host + hbGetBaseUrl() + "root")) {
 					
 					modeModel = modeApp.start();
 					toolApp.start(modeModel, toolApp);
@@ -21,8 +21,5 @@
 					//console.log("ModeApp: navigating outside app");
 				}
 			});
-			var extractInstance = function() {
-				var instance = location.pathname.split("/")[1];
-				return "/" + instance + "/";
-			};
+
 }());
