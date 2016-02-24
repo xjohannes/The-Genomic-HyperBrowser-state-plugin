@@ -37,6 +37,9 @@
         it("sets a dispatcher when creating an object", function() {
             expect( modeCTRL.listenTo).toBe(Dispatcher.listenTo);
         });
+        it("sets a dispatcher when creating an object", function() {
+            expect( modeCTRL.listenTo).toBe(Dispatcher.listenTo);
+        });
         
     });
 

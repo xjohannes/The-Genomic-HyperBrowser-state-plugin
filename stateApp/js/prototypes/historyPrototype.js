@@ -31,7 +31,7 @@
                 }
                 this.listenTo('history:change', this.setModelState, this);
                 this.listenTo('change:history', this.changeHistory, this);
-                this.listenTo('set:history', this.setHistory, this);
+                this.listenTo('set:history', this.changeHistory, this);
 
                 if (location.hash !== '') {
                     this.triggerEvent('history:change', uriAnchor.makeAnchorMap());
@@ -64,7 +64,7 @@
             },
             setModelState: function (locationObj) {
                 // Invariant: All states found in the location hash object is already in the storedStateObject
-                var tmpModel = {}, dependentObj;
+                var tmpModel, dependentObj;
                 for (var prop in locationObj) {
                     tmpModel = {};
                     if (locationObj.hasOwnProperty(prop)) {
@@ -72,13 +72,13 @@
                             dependentObj = ('_' + prop);
                             tmpModel[prop] = locationObj[prop];
                             if (locationObj[dependentObj]) {
-                                tmpModel[dependentObj] = locationObj[dependentObj];
+                                tmpModel['modelState'] = locationObj[dependentObj];
                             }
                             this.triggerEvent('history:' + prop, tmpModel);
                         }
                     }
                 }
-            },
+            }/*,
             setHistory: function (modelObj) {
                 var locationObj = uriAnchor.makeAnchorMap(),
                     tmpModelState = modelObj.modelState;
@@ -95,20 +95,20 @@
                 }
                 triggerHashchange = false;
                 uriAnchor.setAnchor(locationObj, {}, true);
-            },
+            }*/,
             changeHistory: function (modelObj) {
-                var state, locationObj = uriAnchor.makeAnchorMap();
-                if ((modelObj['modelState'] !== undefined)) {
-                    state = modelObj.modelState;
-                    for (var prop in state) {
-                        if (state.hasOwnProperty(prop)) {
-                            locationObj[prop] = state[prop];
-                            storage.set(prop, state[prop]);
-                        }
+                var modelName = modelObj.get('modelName'), modelState = modelObj.toJSON(),
+                    locationObj = uriAnchor.makeAnchorMap();
+                locationObj[modelName] = modelState[modelName];
+                locationObj['_' + modelName] = {};
+                for(var prop in modelState) {
+                    if(modelState.hasOwnProperty(prop) && prop !== modelName) {
+                        locationObj['_' + modelName][prop] = modelState[prop];
+                        storage.set(prop, modelState[prop]);
                     }
-                    triggerHashchange = false;
-                    uriAnchor.setAnchor(locationObj, {}, true);
                 }
+                triggerHashchange = false;
+                uriAnchor.setAnchor(locationObj, {}, true);
             },
             getStoredStateObject: function () {
                 var i, j, store = storage.index(), tmpStorageObj = {};

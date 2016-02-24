@@ -6,14 +6,13 @@
 	var ToolModel = Object.create(BaseModel);
 
 	_.extend(ToolModel, function() {
-		var sharedToolModelState = {}, triggerState = 'history';
+		var triggerState = 'history';
 		return {
 			initialize: function(modelState) {
+				this.modelName = 'tool';
 				this.eventSetup();
 				this.modelState = {};
-				if(modelState) {
-					this.init(modelState);
-				}
+				this.init(modelState);
 			},
 			eventSetup: function() {
 				this.listenTo('history:tool', this.setToolStateFromHistory, this);
@@ -29,22 +28,19 @@
 				// all model changes from history will use a fresh model, thus setting not changing state
 				this.eraseAllModels();
 				triggerState = 'tool';
-				if(state['_tool'] !== undefined) {
-					state['toolState'] = state['_tool'];
-					delete state._tool;
-				}
+
 				this.set(state);
 			},
 			addSetTool: function(args) {
 				if(args.model === this) {
-					this.triggerEvent( 'set:' + triggerState, { model: this, modelState: this.historify()});
+					this.triggerEvent( 'set:' + triggerState, this);
 				}
 			},
 			addChangeTool: function(args) {
 				if(args.model === this) {
-					this.triggerEvent('change:' + triggerState, { model: this, modelState: this.historify()});
+					this.triggerEvent('change:' + triggerState, this);
 				}	
-			},
+			}/*,
 			historify: function() {
 				var toolState = this.get('toolState'), 
 						historyfiedToolstate = {tool: this.get('tool')};
@@ -57,7 +53,7 @@
 					}
 				}
 				return historyfiedToolstate;
-			}
+			}*/
 		}
  	}());
 

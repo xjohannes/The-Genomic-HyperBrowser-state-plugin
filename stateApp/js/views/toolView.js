@@ -35,9 +35,9 @@
 					return tmp.split("form.action = '?'").join("form.action = '"+ config.urlHyperPostfix + "?'");
 					 
 				},
-				render: function(event) {
+				render: function(model) {
 					this.mainDocument = this.el.contentWindow.document;
-					var dataCorrected = this.setCorrectIframeUrl(event.data);
+					var dataCorrected = this.setCorrectIframeUrl(model.data);
 					var newDoc = this.mainDocument.open("text/html", "replace");
 					newDoc.write(dataCorrected);
 					newDoc.close();
@@ -45,8 +45,8 @@
 					
 					return this;
 				},
-				update: function(event) {
-					this.render(event);
+				update: function(model) {
+					this.render(model);
 				}
 			}
 		}())

@@ -6,13 +6,13 @@
 	var ModeModel = Object.create(BaseModel);
 
 	_.extend(ModeModel, function() {
-		var sharedModeModelState = {}, triggerState = 'history';
+		var triggerState = 'history';
 		return {
 			initialize: function(modelState) {
+                this.modelName = 'mode';
 				this.eventSetup();
-				if(modelState) {
-					this.init(modelState);
-				}
+                this.init(modelState);
+
 			},
 			eventSetup: function() {
 				this.listenTo('history:mode', this.toggleMode, this);
@@ -44,12 +44,12 @@
 			},
 			addSetMode: function(args) {
 				if(args.model === this) {
-					this.triggerEvent('set:' + triggerState, {model:this, modelState:this.toJSON()});
+					this.triggerEvent('set:' + triggerState, this);
 				}
 			},
 			addChangeMode: function(args) {
 				if(args.model === this) {
-					this.triggerEvent('change:' + triggerState, {model:this, modelState:this.toJSON()});
+					this.triggerEvent('change:' + triggerState, this);
 				}	
 			}
 		}

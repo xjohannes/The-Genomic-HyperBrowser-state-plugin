@@ -11181,16 +11181,16 @@ return jQuery;
 			this.listenTo('change:mode', this.parseEvent, this); 
 			this.listenTo('change:history', this.parseEvent, this); 
 		},
-		parseEvent: function(event) {
+		parseEvent: function(model) {
 			this.toggleLeftPanel();
-			if(event.model === this.model) {
+			if(model === this.model) {
 				this.updateMode(event);
 			}
 		},
 		toggleLeftPanel: function(event) {
-			(this.model.get('mode') === "basic" ? window.force_left_panel('hide') : window.force_left_panel('show'));
+			(this.get('mode') === "basic" ? window.force_left_panel('hide') : window.force_left_panel('show'));
 		},
-		updateMode: function(event) { 
+		updateMode: function(model) {
 			this.mainFrame = $(config.mainFrame);
 			
 			var tabValue, currentMode, 
@@ -11203,7 +11203,7 @@ return jQuery;
 
 			// Mode change triggered from within a gsuite tool (mainDocument/mainIFrame) 
 			if(isBasic.length >= 1) {
-				currentMode = event.model.get('mode');
+				currentMode = model.get('mode');
 				var serializedForm, form;
 				if(currentMode === 'basic' ) {
     				isBasic.prop('checked', 'checked');
@@ -11218,7 +11218,7 @@ return jQuery;
 				basicTab = this.mainDocument.find(config.basicTab);
 				advancedTab = this.mainDocument.find(config.advancedTab);
 				if(analysisTab.length >= 1) {
-					currentMode  = event.model.get('mode');
+					currentMode  = model.get('mode');
 					(currentMode === 'basic'? tabValue = config.tab2: tabValue = config.tab3);
 					
 					var currentTab = this.mainDocument.find(config.tabs + tabValue);
@@ -11238,47 +11238,47 @@ return jQuery;
 }());
 
 },{"../prototypes/controllerPrototype":13,"../stateAppConfig":18,"underscore":5}],7:[function(require,module,exports){
-(function(){
-	'use strict';
-	var BaseController = require('../prototypes/controllerPrototype'),
-			_    					 = require('underscore'),
-			config 				 = require('../stateAppConfig');
+(function () {
+    'use strict';
+    var BaseController = require('../prototypes/controllerPrototype'),
+        _ = require('underscore'),
+        config = require('../stateAppConfig');
 
-	var ToolController = Object.create(BaseController);
+    var ToolController = Object.create(BaseController);
 
-	_.extend(ToolController, {
-		initialize: function() {
-			this.listenTo('set:tool', this.parseEvent, this);
-		},
-		parseEvent: function(eventObj) {
-			if(eventObj.modelState._tool.serializedForm !== undefined) {
-				this.createAjaxCall(eventObj);
-			} 
-		},
-			//*
-			/* Ajax call will only be executed when setting a tool for the first time.
-			*/
-		createAjaxCall: function(eventObj) {
-			var self = this, currentSelection;
-				currentSelection = eventObj.modelState._tool.currentSelection;
-				$.ajax({
-          type:'post',
-          url: config.urlHyperPostfix + "?" + currentSelection,
-          data: eventObj.modelState._tool.serializedForm,
-          beforeSend: function() {
-         		self.triggerEvent('ajaxCall');
-					},
-          success: function (data) {
-          	console.log("AJAX was sent successfully");
-          	self.triggerEvent('change:tool', {model: this, data: data });
-          },
-          error: function (XMLHttpRequest, textStatus, errorThrown) {
-              console.log("AJAX Error");
-          }
-      });	
-		}
-	});
-	module.exports = ToolController;
+    _.extend(ToolController, {
+        initialize: function () {
+            this.listenTo('set:tool', this.parseEvent, this);
+        },
+        parseEvent: function (eventObj) {
+            if (eventObj.get(serializedForm) !== undefined) {
+                this.createAjaxCall(eventObj);
+            }
+        },
+        //*
+        /* Ajax call will only be executed when setting a tool for the first time.
+         */
+        createAjaxCall: function (eventObj) {
+            var self = this, currentSelection;
+            currentSelection = eventObj.get('currentSelection');
+            $.ajax({
+                type: 'post',
+                url: config.urlHyperPostfix + "?" + currentSelection,
+                data: eventObj.get('serializedForm'),
+                beforeSend: function () {
+                    self.triggerEvent('ajaxCall');
+                },
+                success: function (data) {
+                    console.log("AJAX was sent successfully");
+                    self.triggerEvent('change:tool', {model: this, data: data});
+                },
+                error: function (XMLHttpRequest, textStatus, errorThrown) {
+                    console.log("AJAX Error");
+                }
+            });
+        }
+    });
+    module.exports = ToolController;
 }());
 },{"../prototypes/controllerPrototype":13,"../stateAppConfig":18,"underscore":5}],8:[function(require,module,exports){
 (function() {
@@ -11354,13 +11354,13 @@ module.exports = modeApp;
 	var ModeModel = Object.create(BaseModel);
 
 	_.extend(ModeModel, function() {
-		var sharedModeModelState = {}, triggerState = 'history';
+		var triggerState = 'history';
 		return {
 			initialize: function(modelState) {
+                this.modelName = 'mode';
 				this.eventSetup();
-				if(modelState) {
-					this.init(modelState);
-				}
+                this.init(modelState);
+
 			},
 			eventSetup: function() {
 				this.listenTo('history:mode', this.toggleMode, this);
@@ -11392,12 +11392,12 @@ module.exports = modeApp;
 			},
 			addSetMode: function(args) {
 				if(args.model === this) {
-					this.triggerEvent('set:' + triggerState, {model:this, modelState:this.toJSON()});
+					this.triggerEvent('set:' + triggerState, this);
 				}
 			},
 			addChangeMode: function(args) {
 				if(args.model === this) {
-					this.triggerEvent('change:' + triggerState, {model:this, modelState:this.toJSON()});
+					this.triggerEvent('change:' + triggerState, this);
 				}	
 			}
 		}
@@ -11415,14 +11415,13 @@ module.exports = modeApp;
 	var ToolModel = Object.create(BaseModel);
 
 	_.extend(ToolModel, function() {
-		var sharedToolModelState = {}, triggerState = 'history';
+		var triggerState = 'history';
 		return {
 			initialize: function(modelState) {
+				this.modelName = 'tool';
 				this.eventSetup();
 				this.modelState = {};
-				if(modelState) {
-					this.init(modelState);
-				}
+				this.init(modelState);
 			},
 			eventSetup: function() {
 				this.listenTo('history:tool', this.setToolStateFromHistory, this);
@@ -11438,22 +11437,19 @@ module.exports = modeApp;
 				// all model changes from history will use a fresh model, thus setting not changing state
 				this.eraseAllModels();
 				triggerState = 'tool';
-				if(state['_tool'] !== undefined) {
-					state['toolState'] = state['_tool'];
-					delete state._tool;
-				}
+
 				this.set(state);
 			},
 			addSetTool: function(args) {
 				if(args.model === this) {
-					this.triggerEvent( 'set:' + triggerState, { model: this, modelState: this.historify()});
+					this.triggerEvent( 'set:' + triggerState, this);
 				}
 			},
 			addChangeTool: function(args) {
 				if(args.model === this) {
-					this.triggerEvent('change:' + triggerState, { model: this, modelState: this.historify()});
+					this.triggerEvent('change:' + triggerState, this);
 				}	
-			},
+			}/*,
 			historify: function() {
 				var toolState = this.get('toolState'), 
 						historyfiedToolstate = {tool: this.get('tool')};
@@ -11466,7 +11462,7 @@ module.exports = modeApp;
 					}
 				}
 				return historyfiedToolstate;
-			}
+			}*/
 		}
  	}());
 
@@ -12171,7 +12167,7 @@ module.exports = Controller;
                 }
                 this.listenTo('history:change', this.setModelState, this);
                 this.listenTo('change:history', this.changeHistory, this);
-                this.listenTo('set:history', this.setHistory, this);
+                this.listenTo('set:history', this.changeHistory, this);
 
                 if (location.hash !== '') {
                     this.triggerEvent('history:change', uriAnchor.makeAnchorMap());
@@ -12204,7 +12200,7 @@ module.exports = Controller;
             },
             setModelState: function (locationObj) {
                 // Invariant: All states found in the location hash object is already in the storedStateObject
-                var tmpModel = {}, dependentObj;
+                var tmpModel, dependentObj;
                 for (var prop in locationObj) {
                     tmpModel = {};
                     if (locationObj.hasOwnProperty(prop)) {
@@ -12212,13 +12208,13 @@ module.exports = Controller;
                             dependentObj = ('_' + prop);
                             tmpModel[prop] = locationObj[prop];
                             if (locationObj[dependentObj]) {
-                                tmpModel[dependentObj] = locationObj[dependentObj];
+                                tmpModel['modelState'] = locationObj[dependentObj];
                             }
                             this.triggerEvent('history:' + prop, tmpModel);
                         }
                     }
                 }
-            },
+            }/*,
             setHistory: function (modelObj) {
                 var locationObj = uriAnchor.makeAnchorMap(),
                     tmpModelState = modelObj.modelState;
@@ -12235,20 +12231,20 @@ module.exports = Controller;
                 }
                 triggerHashchange = false;
                 uriAnchor.setAnchor(locationObj, {}, true);
-            },
+            }*/,
             changeHistory: function (modelObj) {
-                var state, locationObj = uriAnchor.makeAnchorMap();
-                if ((modelObj['modelState'] !== undefined)) {
-                    state = modelObj.modelState;
-                    for (var prop in state) {
-                        if (state.hasOwnProperty(prop)) {
-                            locationObj[prop] = state[prop];
-                            storage.set(prop, state[prop]);
-                        }
+                var modelName = modelObj.get('modelName'), modelState = modelObj.toJSON(),
+                    locationObj = uriAnchor.makeAnchorMap();
+                locationObj[modelName] = modelState[modelName];
+                locationObj['_' + modelName] = {};
+                for(var prop in modelState) {
+                    if(modelState.hasOwnProperty(prop) && prop !== modelName) {
+                        locationObj['_' + modelName][prop] = modelState[prop];
+                        storage.set(prop, modelState[prop]);
                     }
-                    triggerHashchange = false;
-                    uriAnchor.setAnchor(locationObj, {}, true);
                 }
+                triggerHashchange = false;
+                uriAnchor.setAnchor(locationObj, {}, true);
             },
             getStoredStateObject: function () {
                 var i, j, store = storage.index(), tmpStorageObj = {};
@@ -12267,14 +12263,16 @@ module.exports = Controller;
 'use strict';
 	var _ 		   = require('underscore'),
         Dispatcher = require('./dispatcherPrototype');
-	
+
 	var Model = (function() {
 		var tmp;
-		
+
 		return {
-			init: function(attributes) {
+			init: function(modelState) {
 				this.modelState = {};
-				this.set(attributes);
+                if(modelState)  {
+                    this.set(modelState);
+                }
 			},
 			set: function(newAttributes) {
 				if(newAttributes === null || newAttributes === undefined) { return; }
@@ -12282,13 +12280,15 @@ module.exports = Controller;
 				for(var prop in newAttributes) {
 					if (newAttributes.hasOwnProperty(prop)) {
 						hasProp = _.has(this.modelState, prop);
-						if (typeof newAttributes[prop] !== 'object') {
+						if (typeof newAttributes[prop] === 'string') {
 							tmp = newAttributes[prop];
+                            console.log("ModelPrototype: this.modelState");
+                            console.log(this.modelState);
 							this.modelState[prop] = tmp;
 						} else {
 							if (this.modelState[prop] === undefined) {
-								this.modelState[prop] = {};
-							}
+                                this.modelState[prop] = {};
+                            }
 							var innerObj = newAttributes[prop];
 
 							for (var innerProp in innerObj) {
@@ -12303,16 +12303,19 @@ module.exports = Controller;
 					this.triggerEvent('addEventType:set', {model:this});
 				} else {
 					this.triggerEvent('addEventType:change', {model:this});
-				} 
-				
+				}
+
 				return this;
 			},
 			get: function(key) {
 				if(this.modelState[key] !== undefined) {
 					return this.modelState[key];
-				}
+				} else if('modelName' === key) {
+                    return this.modelName;
+                }
 				return undefined;
 			},
+
 			toJSON: function() {
 				return this.modelState;
 			},
@@ -12458,10 +12461,8 @@ module.exports = Controller;
 											serializedForm = form.serialize();
 							if(form.length > 0) {
 								toolModel.setToolState({
-									toolState: {
-										serializedForm: serializedForm, 
-										currentSelection: e.currentTarget.name
-									}
+									serializedForm: serializedForm,
+									currentSelection: e.currentTarget.name
 								});
 							} else if( uriAnchor.makeAnchorMap().mode === undefined ) {
 								// To account for situations where mode is not set in url
@@ -12632,9 +12633,9 @@ module.exports = Controller;
 					return tmp.split("form.action = '?'").join("form.action = '"+ config.urlHyperPostfix + "?'");
 					 
 				},
-				render: function(event) {
+				render: function(model) {
 					this.mainDocument = this.el.contentWindow.document;
-					var dataCorrected = this.setCorrectIframeUrl(event.data);
+					var dataCorrected = this.setCorrectIframeUrl(model.data);
 					var newDoc = this.mainDocument.open("text/html", "replace");
 					newDoc.write(dataCorrected);
 					newDoc.close();
@@ -12642,8 +12643,8 @@ module.exports = Controller;
 					
 					return this;
 				},
-				update: function(event) {
-					this.render(event);
+				update: function(model) {
+					this.render(model);
 				}
 			}
 		}())

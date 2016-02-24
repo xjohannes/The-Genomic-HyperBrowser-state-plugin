@@ -50,29 +50,20 @@ describe("A ToolModel class / constructor", function () {
         expect(_.isFunction(toolModel.set)).toBe(true);
         expect(_.isFunction(toolModel.get)).toBe(true);
         expect(_.isFunction(toolModel.toJSON)).toBe(true);
-        expect(_.isFunction(toolModel.historify)).toBe(true);
-
     });
     it("sets a named attribute when creating an object, tested with get()", function () {
-
-
         expect(toolModel.get('tool')).toEqual('Analyze genomic tracks');
-
     });
     it("sets a object as attribute when creating an object, tested with get()", function () {
-
         expect(toolModel.get('toolState')).toEqual({
             pathName: '/state/hyper',
             toolSearch: '?GALAXY_URL=https%3A//hyperbrowser.uio.no/state/tool_runner&tool_id=hb_test_1'
         });
 
     });
-    xit("sets a object as attribute when creating an object, tested with toJSON()", function () {
-        //console.log('toolModel.toJSON()');
-        //console.log(toolModel.toJSON());
+    it("sets a object as attribute when creating an object, tested with toJSON()", function () {
         var testState = toolModel.toJSON();
-        //console.log('state');
-        //console.log(state);
+
         expect(testState).toEqual(state);
 
     });
@@ -104,23 +95,18 @@ describe("A ToolModel class / constructor", function () {
                 target: 'galaxy_main'
             });
 
-
             expect(spy).toHaveBeenCalled();
             // two events pr model state
             expect(spy.calls.count()).toEqual(2);
         });
 
-        xit("Setting the tool name and currentTarget href", function () {
-            result = location.hash;
-            expect(result).toEqual("#!mode=basic&");
+        it("Get modelName", function () {
+            result = toolModel.get("modelName");
+            //console.log("Get modelName:");
+            //console.log(result);
+            expect(result).toEqual("tool");
         });
         describe("Historify", function () {
-            beforeEach(function () {
-
-            });
-            xit('', function () {
-
-            });
             it("returns an object with the tool name and a modelState", function () {
                 result = toolModel.toJSON();
                 // console.log(result);

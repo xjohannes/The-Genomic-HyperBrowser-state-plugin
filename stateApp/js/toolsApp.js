@@ -32,10 +32,8 @@
 											serializedForm = form.serialize();
 							if(form.length > 0) {
 								toolModel.setToolState({
-									toolState: {
-										serializedForm: serializedForm, 
-										currentSelection: e.currentTarget.name
-									}
+									serializedForm: serializedForm,
+									currentSelection: e.currentTarget.name
 								});
 							} else if( uriAnchor.makeAnchorMap().mode === undefined ) {
 								// To account for situations where mode is not set in url

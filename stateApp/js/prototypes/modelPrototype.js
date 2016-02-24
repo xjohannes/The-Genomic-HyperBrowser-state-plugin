@@ -2,14 +2,16 @@
 'use strict';
 	var _ 		   = require('underscore'),
         Dispatcher = require('./dispatcherPrototype');
-	
+
 	var Model = (function() {
 		var tmp;
-		
+
 		return {
-			init: function(attributes) {
+			init: function(modelState) {
 				this.modelState = {};
-				this.set(attributes);
+                if(modelState)  {
+                    this.set(modelState);
+                }
 			},
 			set: function(newAttributes) {
 				if(newAttributes === null || newAttributes === undefined) { return; }
@@ -17,13 +19,15 @@
 				for(var prop in newAttributes) {
 					if (newAttributes.hasOwnProperty(prop)) {
 						hasProp = _.has(this.modelState, prop);
-						if (typeof newAttributes[prop] !== 'object') {
+						if (typeof newAttributes[prop] === 'string') {
 							tmp = newAttributes[prop];
+                            console.log("ModelPrototype: this.modelState");
+                            console.log(this.modelState);
 							this.modelState[prop] = tmp;
 						} else {
 							if (this.modelState[prop] === undefined) {
-								this.modelState[prop] = {};
-							}
+                                this.modelState[prop] = {};
+                            }
 							var innerObj = newAttributes[prop];
 
 							for (var innerProp in innerObj) {
@@ -38,16 +42,19 @@
 					this.triggerEvent('addEventType:set', {model:this});
 				} else {
 					this.triggerEvent('addEventType:change', {model:this});
-				} 
-				
+				}
+
 				return this;
 			},
 			get: function(key) {
 				if(this.modelState[key] !== undefined) {
 					return this.modelState[key];
-				}
+				} else if('modelName' === key) {
+                    return this.modelName;
+                }
 				return undefined;
 			},
+
 			toJSON: function() {
 				return this.modelState;
 			},
