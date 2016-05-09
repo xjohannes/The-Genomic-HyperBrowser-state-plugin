@@ -3,7 +3,8 @@
     var _ = require('underscore'),
         storage = require('simplestorage.js'),
         Dispatcher = require('./dispatcherPrototype'),
-        uriAnchor = require('../polyfills/uriAnchor_mod');
+        uriAnchor = require('../polyfills/uriAnchor_mod'),
+        config = require('../stateAppConfig');
 
     var History = (function () {
         // Private variables
@@ -14,6 +15,9 @@
                 if (triggerHashchange) {
                     event.data.self.triggerEvent('history:change', tmpUrlObject);
                 }
+                setTimeout(function() {
+                    triggerHashchange = true;
+                }, 100);
             },
             _pushStateHandler = function (event) {
                 console.log("History pushState eventType");
@@ -23,6 +27,14 @@
             start: function (options) {
                 uriAnchor.configModule({sub_delimit_char: "->"})
                 options = options || {};
+                /*if(storage.get('uriHistory') === undefined) {
+                    console.log("History: uriHistory undefined");
+                    storage.set("uriHistory", []);
+                } else if(storage.get('uriHistory').length > config.maxStoredItems) {
+                    var tmpUriArr = storage.get('uriHistory');
+                    tmpUriArr.splice(0, (tmpUriArr.length - config.maxStoredItems));
+                }*/
+
 
                 if (options.pushState !== undefined) {
                     $(window).on('pushState', {self: this}, this.pushStateHandler);
@@ -34,13 +46,18 @@
                 this.listenTo('set:history', this.changeHistory, this);
 
                 if (location.hash !== '') {
+                    //some browsers (firefox) does not trigger hashchange when coming 
+                    //to a webpage for the first time
                     this.triggerEvent('history:change', uriAnchor.makeAnchorMap());
                 } else if (storage.index().length > 0) {
                     this.triggerEvent('history:change', this.getStoredStateObject());
                 } else {
                     this.triggerEvent('history:mode', options.initState);
                     triggerHashchange = false;
-                    uriAnchor.setAnchor(options.initState, {}, true);
+                    var anchorString = uriAnchor.makeAnchorString(options.initState);
+                    //console.log(anchorString);
+                    location.hash = anchorString;
+
                 }
             },
             stop: function (options) {
@@ -54,20 +71,51 @@
             },
             //public methods only needed for testing
             hashChangeHandler: function (event) {
+                //console.log("Hashchange triggered by the browser");
                 event.stopPropagation();
                 event.preventDefault();
                 _hashChangeHandler(event);
             },
             pushStateHandler: function (event) {
+                console.log("Histoyr pushState");
                 event.stopPropagation();
                 _pushStateHandler(event);
+            },
+            // Hack to account for the fact that both the browser and this app adds to the history, thus braking back button. 
+            // Not working consistently over browsers.
+            // The idea is that when the local store has tool state stored, but the URI does not
+            // then the app should return to the g suite tabs. This is best done by reloading the page
+            // while the URI hash only has mode state attached: i.e. #mode=basic
+            checkIfGoingBack: function (locationObj) {
+                var localStoreTool = storage.get('tool');
+                if(localStoreTool !== undefined && locationObj['tool'] === undefined) {
+                    // going back to the welcome page 
+                    storage.deleteKey('tool');
+                    locationObj['backToWelcome'] = 'https://hyperbrowser.uio.no/state/static/welcome.html'
+                    delete locationObj['tool'];
+                   
+                } else {
+                    delete locationObj.backToWelcome;
+                }
+            },
+            isPropChanged: function (locationObj, currentProp) {
+                var localStoredProp = storage.get(currentProp);
+                if(locationObj["_s_" + currentProp] !== undefined) {
+                    console.log("History: isPropChanged. propSting: ");
+                    console.log(locationObj["_s_" + currentProp]);
+                }else if(localStoredProp !== currentProp) {
+                    return true
+                } else {
+                    return false;
+                }
             },
             setModelState: function (locationObj) {
                 // Invariant: All states found in the location hash object is already in the storedStateObject
                 var tmpModel, dependentObj;
+                this.checkIfGoingBack(locationObj);
                 for (var prop in locationObj) {
                     tmpModel = {};
-                    if (locationObj.hasOwnProperty(prop)) {
+                    if (locationObj.hasOwnProperty(prop) ) {//&& this.isPropChanged(locationObj, prop)
                         if ((prop.charAt(0) !== '_')) {
                             dependentObj = ('_' + prop);
                             if (locationObj[dependentObj]) {
@@ -80,18 +128,34 @@
                 }
             },
             changeHistory: function (modelObj) {
-                var modelName = modelObj.get('modelName'), modelState = modelObj.toJSON(),
-                    locationObj = uriAnchor.makeAnchorMap();
+                var locationBefore = location.hash, locationAfter = '',
+                    modelName = modelObj.get('modelName'), modelState = modelObj.toJSON(),
+                    locationObj = uriAnchor.makeAnchorMap(), anchorString, baseUri;
                 locationObj[modelName] = modelState[modelName];
                 locationObj['_' + modelName] = {};
                 for(var prop in modelState) {
                     if(modelState.hasOwnProperty(prop) && prop !== modelName) {
                         locationObj['_' + modelName][prop] = modelState[prop];
-                        storage.set(prop, modelState[prop]);
+                        storage.set('_' + modelName, modelState,{TTL: 86400000});
                     }
+                    storage.set(prop, modelState[prop]);
                 }
+
                 triggerHashchange = false;
-                uriAnchor.setAnchor(locationObj, {}, true);
+                baseUri = location.protocol + "//" +  location.host + hbGetBaseUrl();
+                anchorString = uriAnchor.makeAnchorString(locationObj);
+
+                if(modelName === 'tool' || modelObj.gsuite) {
+                    location.replace(baseUri + "#" + anchorString);
+                } else if(modelName === 'mode'){
+                    location.assign(baseUri + "#" + anchorString);
+                }
+                locationAfter = location.hash;
+                if(modelObj.gsuite) {
+                   modelObj.gsuite = false;
+                } else if(locationAfter === locationBefore) {
+                    triggerHashchange = true;
+                }
             },
             getStoredStateObject: function () {
                 var i, j, store = storage.index(), tmpStorageObj = {};

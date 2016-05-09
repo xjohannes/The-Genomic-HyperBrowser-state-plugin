@@ -9,9 +9,9 @@
 		return {
 			init: function(modelState) {
 				this.modelState = {};
-                if(modelState)  {
-                    this.set(modelState);
-                }
+        if(modelState)  {
+            this.set(modelState);
+        }
 			},
 			set: function(newAttributes) {
 				if(newAttributes === null || newAttributes === undefined) { return; }
@@ -24,8 +24,8 @@
 							this.modelState[prop] = tmp;
 						} else {
 							if (this.modelState[prop] === undefined) {
-                                this.modelState[prop] = {};
-                            }
+                this.modelState[prop] = {};
+              }
 							var innerObj = newAttributes[prop];
 
 							for (var innerProp in innerObj) {

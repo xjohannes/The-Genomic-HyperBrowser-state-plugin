@@ -106,10 +106,10 @@ describe("A ToolModel class / constructor", function () {
             //console.log(result);
             expect(result).toEqual("tool");
         });
-        describe("Historify", function () {
-            it("returns an object with the tool name and a modelState", function () {
-                result = toolModel.toJSON();
-                // console.log(result);
+        describe("checkAgainstLocalStorage", function () {
+            it("which object is sent from history", function () {
+                uriAnchor.setAnchor({tool:{serialize:"someSerialization"}});
+                history.setModelState(uriAnchor.makeAnchorMap());
             });
         });
 

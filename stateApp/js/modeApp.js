@@ -9,8 +9,8 @@
 	var modeApp = (function() {
 		return {
 			attachModeListeners: function(modeModel) {
-				var mainFrame = $('#galaxy_main'), mainContent, mainDocument;
-				// Attach basic/advanced button on main navigation
+				var mainFrame = $(config.mainFrame), mainContent, mainDocument;
+				// Attach listener on home logo to clear
 				$(config.hblogo).on('click', function(event) {
 					var tmpMode = storage.get('mode');
 					storage.flush();
@@ -21,12 +21,14 @@
 					modeModel.toggleMode();
 				}); 
 				// Attach mode functionality to basic and advanced sections on gsuite main welcome page
+				// The elements are removed from the DOM when a tool is loaded to the main frame.
+				// This is why the listener must be reattached on every load, if the elements exist
 				mainFrame.on('load', function(e) {
 					mainContent  = $($(config.mainFrame)[0]).contents();
 					mainDocument = mainContent.filter(function() {
 								return this.nodeType === 9;
 							});
-					var tab1 = mainContent.find(config.tag1);
+					var tab1 = mainContent.find(config.tab1);
 						if(tab1.length > 0) {
 							tab1.find(config.basic).on('click', function() {
 								modeModel.toggleMode({'mode': 'basic', 'triggerState': 'history'});
@@ -47,6 +49,7 @@
 			
 				// hide Analyse data tab
 				masthead.find('td').first().hide();
+				
 				modeModel.initialize({mode: 'basic'});
 				modeView.init({model: modeModel, tagName: 'td', classNames: 'tab'});
 				modeView.render();

@@ -9,9 +9,9 @@
 		var triggerState = 'history';
 		return {
 			initialize: function(modelState) {
-                this.modelName = 'mode';
+        this.modelName = 'mode';
 				this.eventSetup();
-                this.init(modelState);
+        this.init(modelState);
 
 			},
 			eventSetup: function() {
@@ -23,7 +23,7 @@
 				var tmpMode;
 				if(state === undefined) {
 					tmpMode = this.get('mode');
-					triggerState = 'history';
+					this.triggerState = 'history';
 			 		// Should I implement the strategy design pattern here, just to get some more meat?
 			 		// It can be linked to state, but it isn't important to make the code easier to read 
 			 		// or maintain, or is it? Or should it only listen for changes from the state:mode
@@ -31,10 +31,12 @@
 					(tmpMode === 'basic' ? this.set({mode: 'advanced'}) : this.set({mode: 'basic'}));
 				}
 				else if(state && state.mode === "basic" || state.mode === "advanced" ) {
-					if(state.triggerState !== undefined) {
-						triggerState = state.triggerState;
+					if(state.triggerState !== undefined && state.triggerState === 'history') {
+						this.triggerState = 'modeCTRL';
+					} else if(state.triggerState === 'gsuite'){
+						this.triggerState = state.triggerState;
 					} else {
-						triggerState = 'mode';
+						this.triggerState = 'mode';
 					}
 					this.set({mode: state.mode});
 				} else {
@@ -44,12 +46,12 @@
 			},
 			addSetMode: function(args) {
 				if(args.model === this) {
-					this.triggerEvent('set:' + triggerState, this);
+					this.triggerEvent('set:' + this.triggerState, this);
 				}
 			},
 			addChangeMode: function(args) {
 				if(args.model === this) {
-					this.triggerEvent('change:' + triggerState, this);
+					this.triggerEvent('change:' + this.triggerState, this);
 				}	
 			}
 		}
