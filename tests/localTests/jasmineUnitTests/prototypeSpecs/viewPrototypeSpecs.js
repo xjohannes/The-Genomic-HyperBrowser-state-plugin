@@ -1,4 +1,4 @@
-var Model = require('../../../../stateApp/js/prototypes/modelPrototype.js'),
+/*var Model = require('../../../../stateApp/js/prototypes/modelPrototype.js'),
     View  = require('../../../../stateApp/js/prototypes/viewPrototype.js'),
     Dispatcher = require('../../../../stateApp/js/prototypes/dispatcherPrototype.js');
 
@@ -75,10 +75,6 @@ describe("A View PROTOTYPE", function() {
             viewInstance.init( {modelInstance:modeModel},  {initialize: 'some initialize options'});
             expect(viewInstance.initialize).toHaveBeenCalledWith( {initialize: 'some initialize options'});
         });
-        /*
-        it("the $ function gets a local DOM representation", function() {
-
-        });
-        */
+       
     });
-});
+});*/

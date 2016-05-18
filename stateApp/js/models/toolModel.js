@@ -39,7 +39,6 @@
 				this.back = 1;
         if(state['tool'] === undefined) {
             //Do nothing
-            //console.log("ToolModel: DO NOTHING");
         } else {
             this.eraseAllModels();
             this.set(state);

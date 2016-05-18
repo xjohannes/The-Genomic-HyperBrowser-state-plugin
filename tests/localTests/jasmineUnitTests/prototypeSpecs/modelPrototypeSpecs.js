@@ -1,4 +1,4 @@
-var Model   = require('../../../../stateApp/js/prototypes/modelPrototype.js'),
+/*var Model   = require('../../../../stateApp/js/prototypes/modelPrototype.js'),
     History = require('../../../../stateApp/js/prototypes/historyPrototype.js'),
     storage    = require('simplestorage.js');
 
@@ -135,3 +135,4 @@ describe("A Model PROTOTYPE", function() {
 });
 
 
+*/

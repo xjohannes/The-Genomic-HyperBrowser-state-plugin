@@ -11223,9 +11223,7 @@ return jQuery;
                     $(isBasic).trigger("change");
                 }
             } else if (analysisTab.length >= 1) {
-                //console.log("ModeCTRL: trigger change:history");
                 modelObj.triggerEvent('change:history', modelObj);
-                // mode change triggered from Gsuite tabs
                 mainTab = this.mainDocument.find(config.mainTab);
                 basicTab = this.mainDocument.find(config.basicTab);
                 advancedTab = this.mainDocument.find(config.advancedTab);
@@ -11244,7 +11242,6 @@ return jQuery;
                 currentTab = this.mainDocument.find(config.tabs + " " + tabValue);
                 currentTab.show().siblings().hide();
             } else {
-                //console.log("ModeCTRL: trigger change:history");
                 if(modelObj.triggerState !== 'mode') {
                     modelObj.triggerEvent('change:history', modelObj);
                 }
@@ -11274,13 +11271,10 @@ return jQuery;
             if(eventObj.backToWelcome !== undefined && typeof eventObj.backToWelcome !== 'function') {
                 this.goBack(eventObj);
             } else if(eventObj.get("serializedForm") !== undefined) {
-                //console.log("ToolModel is defined. Triggers ajax");
                 this.createAjaxCall(eventObj);
             } else if(this.newlyCreated) {
                    this.newlyCreated = false;
-                //console.log("toolCTRL is newly created. Set var to false. Do nothing");
             } else {
-                //console.log("toolCTRL: no toolModel.serializedForm and not newly created. Flush storage and reload window.location");
                 var tmpMode = storage.get('mode');
                     storage.flush();
                     storage.set('mode', tmpMode);
@@ -11292,17 +11286,14 @@ return jQuery;
          */
         createAjaxCall: function (eventObj) {
             var self = this, currentSelection;
-           // currentSelection = eventObj.get('currentSelection');
             $.ajax({
                 type: 'post',
-                url: config.urlHyperPostfix, //+ "?" + currentSelection,
+                url: config.urlHyperPostfix, 
                 data: eventObj.get('serializedForm'),
                 beforeSend: function () {
                     self.triggerEvent('ajaxCall');
-                    //console.log("AJAX Before send");
                 },
                 success: function (data) {
-                    //console.log("AJAX Success");
                     self.triggerEvent('change:tool', {model: this, data: data});
                 },
                 error: function (XMLHttpRequest, textStatus, errorThrown) {
@@ -11312,17 +11303,14 @@ return jQuery;
         },
         goBack: function (eventObj) {
             var self = this, currentSelection;
-           // currentSelection = eventObj.get('currentSelection');
             $.ajax({
                 type: 'post',
-                url:  eventObj.backToWelcome, //+ "?" + currentSelection,
+                url:  eventObj.backToWelcome, 
                 
                 beforeSend: function () {
                     self.triggerEvent('ajaxCall');
-                    //console.log("AJAX Before send. Going back");
                 },
                 success: function (data) {
-                    //console.log("AJAX Success. Going back");
                     self.triggerEvent('change:tool', {model: this, data: data, backToWelcome: 1});
                 },
                 error: function (XMLHttpRequest, textStatus, errorThrown) {
@@ -11428,10 +11416,6 @@ module.exports = modeApp;
 				if(state === undefined) {
 					tmpMode = this.get('mode');
 					this.triggerState = 'history';
-			 		// Should I implement the strategy design pattern here, just to get some more meat?
-			 		// It can be linked to state, but it isn't important to make the code easier to read 
-			 		// or maintain, or is it? Or should it only listen for changes from the state:mode
-			 		//console.log('triggered from the view');
 					(tmpMode === 'basic' ? this.set({mode: 'advanced'}) : this.set({mode: 'basic'}));
 				}
 				else if(state && state.mode === "basic" || state.mode === "advanced" ) {
@@ -11506,7 +11490,6 @@ module.exports = modeApp;
 				this.back = 1;
         if(state['tool'] === undefined) {
             //Do nothing
-            //console.log("ToolModel: DO NOTHING");
         } else {
             this.eraseAllModels();
             this.set(state);
@@ -12227,15 +12210,7 @@ module.exports = Controller;
             start: function (options) {
                 uriAnchor.configModule({sub_delimit_char: "->"})
                 options = options || {};
-                /*if(storage.get('uriHistory') === undefined) {
-                    console.log("History: uriHistory undefined");
-                    storage.set("uriHistory", []);
-                } else if(storage.get('uriHistory').length > config.maxStoredItems) {
-                    var tmpUriArr = storage.get('uriHistory');
-                    tmpUriArr.splice(0, (tmpUriArr.length - config.maxStoredItems));
-                }*/
-
-
+              
                 if (options.pushState !== undefined) {
                     $(window).on('pushState', {self: this}, this.pushStateHandler);
                 } else {
@@ -12255,7 +12230,6 @@ module.exports = Controller;
                     this.triggerEvent('history:mode', options.initState);
                     triggerHashchange = false;
                     var anchorString = uriAnchor.makeAnchorString(options.initState);
-                    //console.log(anchorString);
                     location.hash = anchorString;
 
                 }
@@ -12271,7 +12245,6 @@ module.exports = Controller;
             },
             //public methods only needed for testing
             hashChangeHandler: function (event) {
-                //console.log("Hashchange triggered by the browser");
                 event.stopPropagation();
                 event.preventDefault();
                 _hashChangeHandler(event);
@@ -12298,11 +12271,11 @@ module.exports = Controller;
                     delete locationObj.backToWelcome;
                 }
             },
+            // Not working. 
             isPropChanged: function (locationObj, currentProp) {
                 var localStoredProp = storage.get(currentProp);
                 if(locationObj["_s_" + currentProp] !== undefined) {
-                    console.log("History: isPropChanged. propSting: ");
-                    console.log(locationObj["_s_" + currentProp]);
+                    
                 }else if(localStoredProp !== currentProp) {
                     return true
                 } else {
@@ -12574,12 +12547,9 @@ module.exports = Controller;
                         //var formSelects = mainContent.find('form select');
                         var form = mainContent.find('form'),
                             serializedForm = form.serialize();
-                            //console.log("ToolApp: form:");
-                            //console.log(form);
                         if (form.length > 0 ) {
                             toolModel.setToolState({
                                 serializedForm: serializedForm//,
-                                //currentSelection: e.currentTarget.name
                             }, true);
                         } else if (uriAnchor.makeAnchorMap().mode === undefined) {
                             // To account for situations where mode is not set in url
@@ -12590,14 +12560,11 @@ module.exports = Controller;
                         if (isBasic.length >= 1) {
                             isBasic.parent().hide();
                             if (isBasic.attr('checked') === 'checked' && modeModel.get('mode') !== 'basic') {
-                                //console.log("ToolsApp: _setUpGsuiteTabs: checked");
                                 modeModel.toggleMode({mode: 'basic', triggerState: 'history'});
                             } else if (isBasic.attr('checked') !== 'checked' && modeModel.get('mode') !== 'advanced') {
-                                //console.log("ToolsApp: _setUpGsuiteTabs: unchecked");
                                 modeModel.toggleMode({mode: 'advanced', triggerState: 'history'});
                             } else {
                                 if(uriAnchor.makeAnchorMap()['mode'] !== modeModel.get('mode')) {
-                                    //console.log("ToolApp: Location mode is different than model mode");
                                     modeModel.gsuite = true;
                                     modeModel.toggleMode({mode: modeModel.get('mode'), triggerState: 'gsuite'});
                                 }

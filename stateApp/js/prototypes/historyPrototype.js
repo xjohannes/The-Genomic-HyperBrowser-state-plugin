@@ -27,15 +27,7 @@
             start: function (options) {
                 uriAnchor.configModule({sub_delimit_char: "->"})
                 options = options || {};
-                /*if(storage.get('uriHistory') === undefined) {
-                    console.log("History: uriHistory undefined");
-                    storage.set("uriHistory", []);
-                } else if(storage.get('uriHistory').length > config.maxStoredItems) {
-                    var tmpUriArr = storage.get('uriHistory');
-                    tmpUriArr.splice(0, (tmpUriArr.length - config.maxStoredItems));
-                }*/
-
-
+              
                 if (options.pushState !== undefined) {
                     $(window).on('pushState', {self: this}, this.pushStateHandler);
                 } else {
@@ -55,7 +47,6 @@
                     this.triggerEvent('history:mode', options.initState);
                     triggerHashchange = false;
                     var anchorString = uriAnchor.makeAnchorString(options.initState);
-                    //console.log(anchorString);
                     location.hash = anchorString;
 
                 }
@@ -71,7 +62,6 @@
             },
             //public methods only needed for testing
             hashChangeHandler: function (event) {
-                //console.log("Hashchange triggered by the browser");
                 event.stopPropagation();
                 event.preventDefault();
                 _hashChangeHandler(event);
@@ -98,11 +88,11 @@
                     delete locationObj.backToWelcome;
                 }
             },
+            // Not working. 
             isPropChanged: function (locationObj, currentProp) {
                 var localStoredProp = storage.get(currentProp);
                 if(locationObj["_s_" + currentProp] !== undefined) {
-                    console.log("History: isPropChanged. propSting: ");
-                    console.log(locationObj["_s_" + currentProp]);
+                    
                 }else if(localStoredProp !== currentProp) {
                     return true
                 } else {

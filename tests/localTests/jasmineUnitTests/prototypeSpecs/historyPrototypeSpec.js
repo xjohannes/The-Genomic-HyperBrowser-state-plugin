@@ -1,4 +1,4 @@
-var History = require('../../../../stateApp/js/prototypes/historyPrototype.js'),
+/*var History = require('../../../../stateApp/js/prototypes/historyPrototype.js'),
     Dispatcher = require('../../../../stateApp/js/prototypes/dispatcherPrototype.js'),
     storage = require('simplestorage.js'),
     ModeModel = require('../../../../stateApp/js/models/modeModel.js'),
@@ -26,11 +26,7 @@ describe("A history PROTOTYPE", function () {
         history.stop();
         history = null;
         dispatcher.stopListening();
-        /*
-         for(var prop in subs) {
-         dispatcher.stopListeningl(prop);
-         }
-         */
+        
     });
     it("provides the start and stop methods", function () {
         expect(_.isFunction(history.start)).toBe(true);
@@ -183,3 +179,4 @@ describe("Navigation tests", function () {
 });
 
 
+*/

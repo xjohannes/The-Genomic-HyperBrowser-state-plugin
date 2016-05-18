@@ -16,13 +16,10 @@
             if(eventObj.backToWelcome !== undefined && typeof eventObj.backToWelcome !== 'function') {
                 this.goBack(eventObj);
             } else if(eventObj.get("serializedForm") !== undefined) {
-                //console.log("ToolModel is defined. Triggers ajax");
                 this.createAjaxCall(eventObj);
             } else if(this.newlyCreated) {
                    this.newlyCreated = false;
-                //console.log("toolCTRL is newly created. Set var to false. Do nothing");
             } else {
-                //console.log("toolCTRL: no toolModel.serializedForm and not newly created. Flush storage and reload window.location");
                 var tmpMode = storage.get('mode');
                     storage.flush();
                     storage.set('mode', tmpMode);
@@ -34,17 +31,14 @@
          */
         createAjaxCall: function (eventObj) {
             var self = this, currentSelection;
-           // currentSelection = eventObj.get('currentSelection');
             $.ajax({
                 type: 'post',
-                url: config.urlHyperPostfix, //+ "?" + currentSelection,
+                url: config.urlHyperPostfix, 
                 data: eventObj.get('serializedForm'),
                 beforeSend: function () {
                     self.triggerEvent('ajaxCall');
-                    //console.log("AJAX Before send");
                 },
                 success: function (data) {
-                    //console.log("AJAX Success");
                     self.triggerEvent('change:tool', {model: this, data: data});
                 },
                 error: function (XMLHttpRequest, textStatus, errorThrown) {
@@ -54,17 +48,14 @@
         },
         goBack: function (eventObj) {
             var self = this, currentSelection;
-           // currentSelection = eventObj.get('currentSelection');
             $.ajax({
                 type: 'post',
-                url:  eventObj.backToWelcome, //+ "?" + currentSelection,
+                url:  eventObj.backToWelcome, 
                 
                 beforeSend: function () {
                     self.triggerEvent('ajaxCall');
-                    //console.log("AJAX Before send. Going back");
                 },
                 success: function (data) {
-                    //console.log("AJAX Success. Going back");
                     self.triggerEvent('change:tool', {model: this, data: data, backToWelcome: 1});
                 },
                 error: function (XMLHttpRequest, textStatus, errorThrown) {

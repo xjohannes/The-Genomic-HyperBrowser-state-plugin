@@ -1,4 +1,4 @@
-var Dispatcher = require('../../../../stateApp/js/prototypes/dispatcherPrototype.js'),
+/*var Dispatcher = require('../../../../stateApp/js/prototypes/dispatcherPrototype.js'),
     Model      = require('../../../../stateApp/js/models/modeModel.js'),
     View       = require('../../../../stateApp/js/views/modeView.js');
 
@@ -151,3 +151,4 @@ describe("A dispatcher PROTOTYPE", function() {
 });
 
 
+*/

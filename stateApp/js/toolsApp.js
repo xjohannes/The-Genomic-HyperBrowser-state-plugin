@@ -31,12 +31,9 @@
                         //var formSelects = mainContent.find('form select');
                         var form = mainContent.find('form'),
                             serializedForm = form.serialize();
-                            //console.log("ToolApp: form:");
-                            //console.log(form);
                         if (form.length > 0 ) {
                             toolModel.setToolState({
                                 serializedForm: serializedForm//,
-                                //currentSelection: e.currentTarget.name
                             }, true);
                         } else if (uriAnchor.makeAnchorMap().mode === undefined) {
                             // To account for situations where mode is not set in url
@@ -47,14 +44,11 @@
                         if (isBasic.length >= 1) {
                             isBasic.parent().hide();
                             if (isBasic.attr('checked') === 'checked' && modeModel.get('mode') !== 'basic') {
-                                //console.log("ToolsApp: _setUpGsuiteTabs: checked");
                                 modeModel.toggleMode({mode: 'basic', triggerState: 'history'});
                             } else if (isBasic.attr('checked') !== 'checked' && modeModel.get('mode') !== 'advanced') {
-                                //console.log("ToolsApp: _setUpGsuiteTabs: unchecked");
                                 modeModel.toggleMode({mode: 'advanced', triggerState: 'history'});
                             } else {
                                 if(uriAnchor.makeAnchorMap()['mode'] !== modeModel.get('mode')) {
-                                    //console.log("ToolApp: Location mode is different than model mode");
                                     modeModel.gsuite = true;
                                     modeModel.toggleMode({mode: modeModel.get('mode'), triggerState: 'gsuite'});
                                 }

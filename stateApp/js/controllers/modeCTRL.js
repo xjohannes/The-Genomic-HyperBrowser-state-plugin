@@ -52,9 +52,7 @@
                     $(isBasic).trigger("change");
                 }
             } else if (analysisTab.length >= 1) {
-                //console.log("ModeCTRL: trigger change:history");
                 modelObj.triggerEvent('change:history', modelObj);
-                // mode change triggered from Gsuite tabs
                 mainTab = this.mainDocument.find(config.mainTab);
                 basicTab = this.mainDocument.find(config.basicTab);
                 advancedTab = this.mainDocument.find(config.advancedTab);
@@ -73,7 +71,6 @@
                 currentTab = this.mainDocument.find(config.tabs + " " + tabValue);
                 currentTab.show().siblings().hide();
             } else {
-                //console.log("ModeCTRL: trigger change:history");
                 if(modelObj.triggerState !== 'mode') {
                     modelObj.triggerEvent('change:history', modelObj);
                 }

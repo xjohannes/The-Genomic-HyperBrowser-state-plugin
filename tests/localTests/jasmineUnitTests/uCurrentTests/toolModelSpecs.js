@@ -1,4 +1,4 @@
-var ToolModel = require('../../../../stateApp/js/models/toolModel.js'),
+/*var ToolModel = require('../../../../stateApp/js/models/toolModel.js'),
     ModeModel = require('../../../../stateApp/js/models/modeModel.js'),
     storage = require('simplestorage.js'),
     History = require('../../../../stateApp/js/prototypes/historyPrototype.js'),
@@ -117,3 +117,4 @@ describe("A ToolModel class / constructor", function () {
 });
 
 
+*/

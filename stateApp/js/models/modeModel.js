@@ -24,10 +24,6 @@
 				if(state === undefined) {
 					tmpMode = this.get('mode');
 					this.triggerState = 'history';
-			 		// Should I implement the strategy design pattern here, just to get some more meat?
-			 		// It can be linked to state, but it isn't important to make the code easier to read 
-			 		// or maintain, or is it? Or should it only listen for changes from the state:mode
-			 		//console.log('triggered from the view');
 					(tmpMode === 'basic' ? this.set({mode: 'advanced'}) : this.set({mode: 'basic'}));
 				}
 				else if(state && state.mode === "basic" || state.mode === "advanced" ) {
